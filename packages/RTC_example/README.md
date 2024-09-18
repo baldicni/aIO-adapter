@@ -1,0 +1,1 @@
+# RTC example usefull for timestamp generation
