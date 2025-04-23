@@ -20,5 +20,5 @@ The structure is the following:
 The `packages` folder contains the `stable` version of the firmware and all other experimental versions (`app1`, `app2`, etc.).  
 Common scripts or tools shared among various versions can be placed in the `scripts` folder. 
 Configuration files can be placed in the `config` folder.  
-All the documentation abou the elements and the development of the PCB can be placed in the `docs` folder.
+All the documentation about the elements and the development of the PCB can be placed in the `docs` folder.
 
