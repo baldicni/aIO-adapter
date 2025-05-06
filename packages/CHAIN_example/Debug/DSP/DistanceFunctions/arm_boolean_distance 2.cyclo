@@ -1,0 +1,4 @@
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/DistanceFunctions/arm_boolean_distance_template.h:458:6:arm_boolean_distance_TT_TF_FT	16
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/DistanceFunctions/arm_boolean_distance_template.h:458:6:arm_boolean_distance_TF_FT	12
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/DistanceFunctions/arm_boolean_distance_template.h:458:6:arm_boolean_distance_TT_FF_TF_FT	20
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/DistanceFunctions/arm_boolean_distance_template.h:458:6:arm_boolean_distance_TT	8

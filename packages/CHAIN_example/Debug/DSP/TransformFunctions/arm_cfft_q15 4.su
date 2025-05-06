@@ -1,0 +1,3 @@
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/TransformFunctions/arm_cfft_q15.c:631:24:arm_cfft_q15	32	static
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/TransformFunctions/arm_cfft_q15.c:688:24:arm_cfft_radix4by2_q15	200	static,ignoring_inline_asm
+/Users/nbaldicc/STM32Cube/Repository/Packs/ARM/CMSIS-DSP/1.16.2/Source/TransformFunctions/arm_cfft_q15.c:787:24:arm_cfft_radix4by2_inverse_q15	200	static,ignoring_inline_asm
