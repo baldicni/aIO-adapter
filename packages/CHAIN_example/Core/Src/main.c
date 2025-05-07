@@ -112,7 +112,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  float32_t k_p = 0.1f;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -159,10 +159,10 @@ int main(void)
 	    for (int i = 0; i < N; i++)
 	        e[i] = x_sp[i] - x[i]; // Distance from set point
 
-	    u_pid[0] = 0.1f * e[0];
-	    u_pid[1] = 0.1f * e[1];
-	    u_pid[2] = 0.1f * e[2];
-	    u_pid[3] = 0.1f * e[3];  // Simulated PID output
+	    u_pid[0] = k_p * e[0];
+	    u_pid[1] = k_p * e[1];
+	    u_pid[2] = k_p * e[2];
+	    u_pid[3] = k_p * e[3];  // Simulated PID with proportional response
 
 	    arm_mat_mult_f32(&D, &u_pid_vec, &u_vec); // Driving u = D*u_pid
 
