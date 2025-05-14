@@ -9,6 +9,9 @@
 		<item key="SmartImportRootWizardPage.STORE_NESTED_PROJECTS" value="true"/>
 		<item key="SmartImportRootWizardPage.STORE_CONFIGURE_NATURES" value="true"/>
 		<list key="org.eclipse.ui.internal.wizards.datatransfer.SmartImportRootWizardPage.knownSources">
+			<item value="/Users/nbaldicc/Desktop/JAPworkspace/aIO-adapter/packages/RTC_example"/>
+			<item value="/Users/nbaldicc/Desktop/JAPworkspace/aIO-adapter/packages/CHAIN_example"/>
+			<item value="/Users/nbaldicc/Desktop/JAPworkspace/aIO-adapter/packages/CMSIS_DSP_blank"/>
 			<item value="/Users/nbaldicc/Desktop/JAPworkspace/aIO-adapter/packages/PID_example"/>
 		</list>
 		<section name="SmartImportWizard.dialogBounds">
