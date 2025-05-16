@@ -49,45 +49,104 @@ def update_status(msg, frame, frame_label):
     frame_label.update_idletasks()  
     if frame == filter_box:
         frame_label.after(2000, lambda: frame.set(""))
-  
+
+def build_frame_data():
+    ''' 
+        - Sensing Matrix: 4x3 = 12 floats concatenated rows 
+        - Switch1 sw1: 3 bytes
+        - Setpoint x_sp: 3 floats
+        - PID 3 Vectors 3fx3 = 9 floats
+        - Filter before PID: 2x5fx3 floats = 30 floats
+        - Switch2 sw2: 3 bytes
+        - Offset x_os: 3 floats
+        - Matrix D: 3x4 = 12 floats concatenated rows
+
+        '''
+    if True:
+        # S Matrix 4x3 = 12 float
+        S = [np.float32(s_entries[i][j].get()) for j in range(3) for i in range(4)]
+        # print("Sensing Matrix: ", S)
+
+        # Switch 1: 3 byte
+        sw1 = [np.int8(sw1_vars[i].get()) for i in range(3)]
+        # print("Switch 1: ", sw1)
+
+        # Setpoint x_sp: 3 float
+        x_sp = [np.float32(xsp_entries[i].get()) for i in range(3)]
+        # print("Setpoint: ", x_sp)
+
+        # PID: 3 float per DOF (Kp, Ki, Kd)
+        PID1_values = []
+        PID2_values = []
+        PID3_values = []
+        for dof in range(3):
+            Kp = np.float32(pid_entries[dof][0].get())
+            Ki = np.float32(pid_entries[dof][1].get())
+            Kd = np.float32(pid_entries[dof][2].get())
+            PID1_values.append(Kp)
+            PID2_values.append(Ki)
+            PID3_values.append(Kd)
+        # print("PID values: ", PID1_values)
+        # print("PID values: ", PID2_values)
+        # print("PID values: ", PID3_values)
+
+        # Filters: 10 floats fot each DOF
+        filtro_idx = 1  # Solo 'Filter'
+        filtro_entries_filter_1 = filtro_entries[filtro_idx]
+        filtro_entries_filter_2 = filtro_entries[filtro_idx]
+        filtro_entries_filter_3 = filtro_entries[filtro_idx]
+        filter_values_flat1 = [np.float32(e.get()) for stage in filtro_entries_filter_1 for e in stage]  # 10 valori
+        filter_values_flat2 = [np.float32(e.get()) for stage in filtro_entries_filter_2 for e in stage]  # 10 valori
+        filter_values_flat3 = [np.float32(e.get()) for stage in filtro_entries_filter_3 for e in stage]  # 10 valori
+        # print("Filter values: ", filter_values_flat1)
+        # print("Filter values: ", filter_values_flat2)
+        # print("Filter values: ", filter_values_flat3)
+
+        # Switch 2: 3 byte
+        sw2 = [np.int8(sw2_vars[i].get()) for i in range(3)]
+        # print("Switch 2: ", sw2)
+
+        # Offset x_os: 3 float
+        x_os = [np.float32(xos_entries[i].get()) for i in range(3)]
+        # print("Offset: ", x_os)
+
+        # D Matrix: 3x4 = 12 float
+        D = [np.float32(d_entries[i][j].get()) for j in range(4) for i in range(3)]
+        # print("Matrix D: ", D)
+
+        frame_format = '<12f3B3f3f3f3f10f10f10f3B3f12f'
+
+        # Insert the function to print in the gui the number of bytes of frame data
+        
+        frame_data = struct.pack(frame_format, *S, *sw1, *x_sp, 
+                                 *PID1_values, *PID2_values, *PID3_values, 
+                                 *filter_values_flat1, *filter_values_flat2, *filter_values_flat3, 
+                                 *sw2, *x_os, *D)
+        print("Frame data: ", frame_data)
+        print("Frame data length: ", len(frame_data))
+    # try:
+        
+    #     return frame_data
+
+    # except Exception as e:
+    #     print(e)
+    #     update_status(f"Error in data preparation: {e}", status_var, status_label)
+    #     return None
+    
 def invia_dati():  
-    try: 
-        S = [[float(s_entries[i][j].get()) for j in range(3)] for i in range(4)]  
-        sw1 = [int(sw1_vars[i].get()) for i in range(3)]  
-        x_sp = [float(xsp_entries[i].get()) for i in range(3)]  
-        PID = [[float(pid_entries[i][j].get()) for j in range(3)] for i in range(3)]  
-        filtri = []  
-        for idx in range(3):  
-            num = [float(filtro_entries[idx][0][i].get()) for i in range(5)]  
-            den = [float(filtro_entries[idx][1][i].get()) for i in range(5)]  
-            filtri.extend(num)  
-            filtri.extend(den)  
-        sw2 = [int(sw2_vars[i].get()) for i in range(3)]  
-        x_os = [float(xos_entries[i].get()) for i in range(3)]  
-        D = [[float(d_entries[i][j].get()) for j in range(4)] for i in range(3)]  
-  
-        # Flatten all data for struct.pack  
-        float_values = []  
-        for row in S: float_values.extend(row)  
-        float_values.extend(x_sp)  
-        for row in PID: float_values.extend(row)  
-        float_values.extend(filtri)  
-        float_values.extend(x_os)  
-        for row in D: float_values.extend(row)  
-        uint8_values = sw1 + sw2  
-  
-        frame_format = '<' + str(len(float_values)) + 'f' + str(len(uint8_values)) + 'B'  
-        frame_data = struct.pack(frame_format, *(float_values + uint8_values))  
-  
-        if uart_port:  
-            ser = serial.Serial(uart_port, 115200, timeout=1)  
-            ser.write(frame_data)  
-            ser.close()  
-            update_status('Data successfully sent!', status_var, status_label)  
-        else:  
-            update_status('No serial port found!', status_var, status_label)  
-    except Exception as e:  
-        update_status('Error: ' + str(e), status_var, status_label)  
+
+    frame_data = build_frame_data()
+
+    if uart_port:
+        if frame_data is not None:
+            ser = serial.Serial(uart_port, 115200, timeout=1)
+            ser.write(frame_data)
+            ser.close()
+            update_status(f'Data successfully sent!   Frame Length: {len(frame_data)} bytes', status_var, status_label)
+        else:
+            update_status('Error: Frame data not generated.', status_var, status_label)
+    else:
+        update_status('No serial port found!', status_var, status_label)
 
 def lift_window():
     root.focus_force()                    # Focus the window
@@ -256,12 +315,12 @@ for filtro_idx,type in zip(range(2), filters_type):
 
             def compute_and_fill():
                 try:
-                    fs = float(fs_var.get())
-                    f0 = float(f0_var.get())
-                    order = int(order_var.get())
+                    fs = np.float32(fs_var.get())
+                    f0 = np.float32(f0_var.get())
+                    order = np.int8(order_var.get())
                     ftype = type_var.get()
                     Q_text = Q_var.get()
-                    Q = float(Q_var.get()) if Q_text else None
+                    Q = np.float32(Q_var.get()) if Q_text else None
                     if ftype == 'notch' and Q is None:
                         update_status("Error: Q factor is required for notch filter.", filter_box, filter_status_label)
                         return
@@ -355,5 +414,6 @@ if uart_port:
     update_status('Serial port found: ' + uart_port, status_var, status_label)  
 else:  
     update_status('No serial port found!', status_var, status_label)  
+
   
 root.mainloop()  
