@@ -151,39 +151,48 @@ def invia_dati():
 def lift_window():
     root.focus_force()                    # Focus the window
 
+
 root = tk.Tk()
 root.minsize(850, 650)
-root.after(0, lift_window)  # Schedule it to run just after window starts
+root.after(0, lift_window)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 root.title('Data Sender to STM32')
     
 main_frame = ttk.Frame(root)  
 main_frame.grid(row=0, column=0, padx=10, pady=10, sticky="NSEW") 
-main_frame.columnconfigure((0, 1), weight=1)  # Combine columnconfigure calls
-main_frame.rowconfigure(0, weight=1) 
+main_frame.columnconfigure(0, weight=1)
+main_frame.columnconfigure(1, weight=1)
+main_frame.rowconfigure(0, weight=1)
+main_frame.rowconfigure(1, weight=0)
+main_frame.rowconfigure(2, weight=0)
   
 # Left and Right columns  
 col_left = ttk.Frame(main_frame)  
-col_left.grid(row=0, column=0, sticky='n')  
-col_right = ttk.Frame(main_frame)  
-col_right.grid(row=0, column=1, sticky='n', padx=20)  
+col_left.grid(row=0, column=0, sticky='NSEW')
+col_left.columnconfigure(0, weight=1)  
+for i in range(5): 
+    col_left.rowconfigure(i, weight=0)
 
-col_left.columnconfigure(0, weight=1)
-col_right.columnconfigure(0, weight=1)
+col_right = ttk.Frame(main_frame)  
+col_right.grid(row=0, column=1, sticky='NSEW', padx=20)  
+col_right.columnconfigure(0, weight=1)  
+for i in range(4):  
+    col_right.rowconfigure(i, weight=0)
 
 # Sampling frequency
 fs_entries = []
 init_fs_values = ["1000"]
 frame_fs = ttk.LabelFrame(col_left, text='Sampling frequency')
-frame_fs.grid(row=0, column=0, padx=6, pady=6, sticky="NSEW")
+frame_fs.grid(row=0, column=0, padx=6, pady=(6, 3), sticky="NSEW")
+frame_fs.columnconfigure(0, weight=1)  
 for i in range(1):
     e = ttk.Entry(frame_fs, width=7)
     e.insert(0, init_fs_values[i])
-    e.grid(row=0, column=i)
+    e.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  
     fs_entries.append(e)
 
-# Matrix S (pre-filled with 1)  
+# Matrix S
 s_entries = []  
 init_values_S = [
     ["1", "0", "0"],
@@ -192,36 +201,43 @@ init_values_S = [
     ["0", "0", "0"]
 ]
 frame_s = ttk.LabelFrame(col_left, text='Matrix S')  
-frame_s.grid(row=0, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_s.grid(row=1, column=0, padx=6, pady=3, sticky="NSEW")
+# Configurazione colonne per Matrix S
+for j in range(3):
+    frame_s.columnconfigure(j, weight=1)
 for i in range(4):  
     row_entries = []  
     for j in range(3):  
         e = ttk.Entry(frame_s, width=5)  
         e.insert(0, init_values_S[i][j])  
-        e.grid(row=i, column=j)  
+        e.grid(row=i, column=j, padx=2, pady=2, sticky="EW")  # .
         row_entries.append(e)  
     s_entries.append(row_entries)  
   
 # Switch sw1  
 sw1_vars = [tk.IntVar(value=1) for _ in range(3)]  
 frame_sw1 = ttk.LabelFrame(col_left, text='Switch sw1')  
-frame_sw1.grid(row=1, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_sw1.grid(row=2, column=0, padx=6, pady=3, sticky="NSEW")
+for j in range(3):
+    frame_sw1.columnconfigure(j, weight=1)
 for i in range(3): 
     cb = ttk.Checkbutton(frame_sw1, text='sw1_' + str(i+1), variable=sw1_vars[i])  
-    cb.grid(row=0, column=i)  
+    cb.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  # .
   
 # Setpoint x_sp  
 xsp_entries = [] 
 init_xsp_values = ["0", "0", "0"] 
 frame_xsp = ttk.LabelFrame(col_left, text='Setpoint x_sp')  
-frame_xsp.grid(row=2, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_xsp.grid(row=3, column=0, padx=6, pady=3, sticky="NSEW")
+for j in range(3):
+    frame_xsp.columnconfigure(j, weight=1)
 for i in range(3):  
     e = ttk.Entry(frame_xsp, width=7) 
     e.insert(0, init_xsp_values[i]) 
-    e.grid(row=0, column=i)  
+    e.grid(row=0, column=i, padx=2, pady=5, sticky="EW")  # .
     xsp_entries.append(e)  
   
-# PID Matrix (Rows: PID, Columns: Kp, Ki, Kd)  
+# PID Matrix
 pid_entries = []  
 init_pid_values = [
     ["0.1", "0.001", "0."],
@@ -229,47 +245,54 @@ init_pid_values = [
     ["0.1", "0.001", "0."]
 ]
 frame_pid = ttk.LabelFrame(col_left, text='PID Matrix')  
-frame_pid.grid(row=3, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_pid.grid(row=4, column=0, padx=6, pady=3, sticky="NSEW")
+# Configurare le colonne per PID Matrix
+for j in range(4):  # 1 colonna per le etichette PID + 3 colonne per Kp, Ki, Kd
+    frame_pid.columnconfigure(j, weight=1)
 # Column headers  
-ttk.Label(frame_pid, text='Kp').grid(row=0, column=1)  
-ttk.Label(frame_pid, text='Ki').grid(row=0, column=2)  
-ttk.Label(frame_pid, text='Kd').grid(row=0, column=3)  
+ttk.Label(frame_pid, text='Kp').grid(row=0, column=1, padx=2, pady=2)  
+ttk.Label(frame_pid, text='Ki').grid(row=0, column=2, padx=2, pady=2)  
+ttk.Label(frame_pid, text='Kd').grid(row=0, column=3, padx=2, pady=2)  
 for i in range(3):  
     row_entries = []  
-    ttk.Label(frame_pid, text='PID ' + str(i+1)).grid(row=i+1, column=0)  
+    ttk.Label(frame_pid, text='PID ' + str(i+1)).grid(row=i+1, column=0, padx=2, pady=2)  
     for j in range(3):  
         e = ttk.Entry(frame_pid, width=7)  
         e.insert(0, init_pid_values[i][j])
-        e.grid(row=i+1, column=j+1)  
+        e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  # .
         row_entries.append(e)  
     pid_entries.append(row_entries)  
   
 # Filters (Fourth order)  
-
 filtro_entries = []  
 frame_filtri = ttk.LabelFrame(col_right, text='Fourth Order Filters')  
-frame_filtri.grid(row=0, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_filtri.grid(row=0, column=0, padx=5, pady=5, sticky="NSEW")
+frame_filtri.columnconfigure(0, weight=1) 
 filters_type = ['Anti-aliasing', 'Filter']
-for filtro_idx,type in zip(range(2), filters_type):  
+for filtro_idx, type in zip(range(2), filters_type):  
     subframe = ttk.LabelFrame(frame_filtri, text=(type if type == 'Anti-aliasing' else 'Filter '))  
-    subframe.grid(row=filtro_idx, column=0, padx=2, pady=2, sticky='w')  
+    subframe.grid(row=filtro_idx, column=0, padx=2, pady=2, sticky='NSEW')
+    subframe.columnconfigure(0, weight=0)  
+    for j in range(1, 6):  # 5 colonne per i valori numerici
+        subframe.columnconfigure(j, weight=1)
+    
     # First stage 
-    ttk.Label(subframe, text='First Stage:').grid(row=0, column=0, sticky='w')  
+    ttk.Label(subframe, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)  
     first_stage_entries = []
     first_stage_init_values = ["0.004824343357716229", "0.009648686539896796", "0.004824343384506867", "1.048599576362613", "-0.2961403575616704"]
     second_stage_init_entries = ["1.0", "2.000000036385403", "0.9999999944467821", "1.3209134308194246", "-0.632738792885275"]
     for i in range(5):  
         e = ttk.Entry(subframe, width=4) 
         e.insert(0, first_stage_init_values[i] if type == 'Anti-aliasing' else "0") 
-        e.grid(row=0, column=i+1)
+        e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")  # .
         first_stage_entries.append(e)  
     # Second stage  
-    ttk.Label(subframe, text='Second Stage:').grid(row=1, column=0, sticky='w')  
+    ttk.Label(subframe, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)  
     second_stage_entries = []  
     for i in range(5):  
         e = ttk.Entry(subframe, width=4)  
         e.insert(0, second_stage_init_entries[i] if type == 'Anti-aliasing' else "0")
-        e.grid(row=1, column=i+1)  
+        e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")  # .
         second_stage_entries.append(e)  
     filtro_entries.append((first_stage_entries, second_stage_entries))  
     
@@ -278,7 +301,7 @@ for filtro_idx,type in zip(range(2), filters_type):
   
         mode_var = tk.StringVar(value='manual')
 
-# Dictionary to store the script parameters
+        # Dictionary to store the script parameters
         script_params = {
             'fs': '1000',
             'f0': '100',
@@ -297,21 +320,24 @@ for filtro_idx,type in zip(range(2), filters_type):
             type_var = tk.StringVar(value=script_params['type'])
             Q_var = tk.StringVar(value=script_params['Q'])
 
-            ttk.Label(win, text="Sampling frequency:").grid(row=0, column=0, sticky='w')
-            ttk.Entry(win, textvariable=fs_var).grid(row=0, column=1)
+            win.columnconfigure(0, weight=0)
+            win.columnconfigure(1, weight=1)
 
-            ttk.Label(win, text="Cut-off frequency:").grid(row=1, column=0, sticky='w')
-            ttk.Entry(win, textvariable=f0_var).grid(row=1, column=1)
+            ttk.Label(win, text="Sampling frequency:").grid(row=0, column=0, sticky='w', padx=5, pady=3)
+            ttk.Entry(win, textvariable=fs_var).grid(row=0, column=1, sticky="EW", padx=5, pady=3)
 
-            ttk.Label(win, text="Filter order:").grid(row=2, column=0, sticky='w')
-            ttk.Entry(win, textvariable=order_var).grid(row=2, column=1)
+            ttk.Label(win, text="Cut-off frequency:").grid(row=1, column=0, sticky='w', padx=5, pady=3)
+            ttk.Entry(win, textvariable=f0_var).grid(row=1, column=1, sticky="EW", padx=5, pady=3)
 
-            ttk.Label(win, text="Q factor (for notch filter):").grid(row=3, column=0, sticky='w')
-            ttk.Entry(win, textvariable=Q_var).grid(row=3, column=1)
+            ttk.Label(win, text="Filter order:").grid(row=2, column=0, sticky='w', padx=5, pady=3)
+            ttk.Entry(win, textvariable=order_var).grid(row=2, column=1, sticky="EW", padx=5, pady=3)
 
-            ttk.Label(win, text="Filter type:").grid(row=4, column=0, sticky='w')
+            ttk.Label(win, text="Q factor (for notch filter):").grid(row=3, column=0, sticky='w', padx=5, pady=3)
+            ttk.Entry(win, textvariable=Q_var).grid(row=3, column=1, sticky="EW", padx=5, pady=3)
+
+            ttk.Label(win, text="Filter type:").grid(row=4, column=0, sticky='w', padx=5, pady=3)
             type_menu = ttk.Combobox(win, textvariable=type_var, values=['lowpass', 'highpass', 'notch'], state='readonly')
-            type_menu.grid(row=4, column=1)
+            type_menu.grid(row=4, column=1, sticky="EW", padx=5, pady=3)
 
             def compute_and_fill():
                 try:
@@ -325,7 +351,7 @@ for filtro_idx,type in zip(range(2), filters_type):
                         update_status("Error: Q factor is required for notch filter.", filter_box, filter_status_label)
                         return
             
-            # Save the parameters to the script_params dictionary
+                    # Save the parameters to the script_params dictionary
                     script_params['fs'] = fs_var.get()
                     script_params['f0'] = f0_var.get()
                     script_params['order'] = order_var.get()
@@ -362,20 +388,24 @@ for filtro_idx,type in zip(range(2), filters_type):
 # Switch sw2  
 sw2_vars = [tk.IntVar(value=1) for _ in range(3)]  
 frame_sw2 = ttk.LabelFrame(col_right, text='Switch sw2')  
-frame_sw2.grid(row=1, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_sw2.grid(row=1, column=0, padx=5, pady=5, sticky="NSEW")
+for j in range(3):
+    frame_sw2.columnconfigure(j, weight=1)
 for i in range(3):  
     cb = ttk.Checkbutton(frame_sw2, text='sw2_' + str(i+1), variable=sw2_vars[i])  
-    cb.grid(row=0, column=i)  
+    cb.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  # .
   
 # Offset x_os  
 xos_entries = []  
 init_xos_values = ["0", "0", "0"]
 frame_xos = ttk.LabelFrame(col_right, text='Offset x_os')  
-frame_xos.grid(row=2, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_xos.grid(row=2, column=0, padx=5, pady=5, sticky="NSEW")
+for j in range(3):
+    frame_xos.columnconfigure(j, weight=1)
 for i in range(3):  
     e = ttk.Entry(frame_xos, width=7)  
     e.insert(0, init_xos_values[i])
-    e.grid(row=0, column=i)  
+    e.grid(row=0, column=i, padx=2, pady=2, sticky="EW")  
     xos_entries.append(e)  
   
 # Matrix D (pre-filled with 1)  
@@ -386,19 +416,22 @@ init_values_D = [
     ["0", "0", "1", "0"]
 ]
 frame_d = ttk.LabelFrame(col_right, text='Matrix D')  
-frame_d.grid(row=3, column=0, padx=5, pady=5, sticky="NSEW")  
+frame_d.grid(row=3, column=0, padx=5, pady=5, sticky="NSEW")
+
+for j in range(4):
+    frame_d.columnconfigure(j, weight=1)
 for i in range(np.shape(init_values_D)[0]):  
     row_entries = []  
     for j in range(np.shape(init_values_D)[1]):  
         e = ttk.Entry(frame_d, width=5)  
         e.insert(0, init_values_D[i][j])  
-        e.grid(row=i, column=j)  
+        e.grid(row=i, column=j, padx=2, pady=2, sticky="EW")  
         row_entries.append(e)  
     d_entries.append(row_entries)  
 
 filter_box = tk.StringVar()  
 filter_status_label = tk.Label(frame_filtri, textvariable=filter_box, bg='black', fg='white', relief='sunken', anchor='w', width=50, height=2)  
-filter_status_label.grid(row=2, column=0, columnspan=1, pady=10, sticky="NSEW")
+filter_status_label.grid(row=2, column=0, columnspan=1, pady=10, sticky="NSEW")  
 
 # Status box (white text)  
 status_var = tk.StringVar()  
@@ -406,7 +439,8 @@ status_label = tk.Label(main_frame, textvariable=status_var, bg='black', fg='whi
 status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")  
   
 # Send button  
-ttk.Button(main_frame, text='Send Data', command=invia_dati).grid(row=1, column=0, columnspan=2, pady=15)  
+send_button = ttk.Button(main_frame, text='Send Data', command=invia_dati)
+send_button.grid(row=1, column=0, columnspan=2, pady=15)
   
 # Serial port detection at startup  
 uart_port = find_uart_port()  
