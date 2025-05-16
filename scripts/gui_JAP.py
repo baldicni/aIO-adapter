@@ -124,14 +124,7 @@ def build_frame_data():
                                  *sw2, *x_os, *D)
         print("Frame data: ", frame_data)
         print("Frame data length: ", len(frame_data))
-    # try:
-        
-    #     return frame_data
-
-    # except Exception as e:
-    #     print(e)
-    #     update_status(f"Error in data preparation: {e}", status_var, status_label)
-    #     return None
+        return frame_data
     
 def invia_dati():  
 
@@ -150,6 +143,38 @@ def invia_dati():
 
 def lift_window():
     root.focus_force()                    # Focus the window
+
+
+# Closed loop toggles
+def toggle_sw1_loop():
+    current_state = sw1_toggle_var.get()
+    new_state = 0 if current_state else 1
+    sw1_toggle_var.set(new_state)
+    
+    # Set same values for sw1
+    for i in range(3):
+        sw1_vars[i].set(new_state)
+    
+    
+    sw1_toggle_button.config(
+        relief=tk.SUNKEN if new_state else tk.RAISED,
+        bg='lightgreen' if new_state else 'lightgray'
+    )
+
+def toggle_sw2_loop():
+    current_state = sw2_toggle_var.get()
+    new_state = 0 if current_state else 1
+    sw2_toggle_var.set(new_state)
+    
+    
+    for i in range(3):
+        sw2_vars[i].set(new_state)
+    
+    
+    sw2_toggle_button.config(
+        relief=tk.SUNKEN if new_state else tk.RAISED,
+        bg='lightgreen' if new_state else 'lightgray'
+    )
 
 
 root = tk.Tk()
@@ -202,7 +227,7 @@ init_values_S = [
 ]
 frame_s = ttk.LabelFrame(col_left, text='Matrix S')  
 frame_s.grid(row=1, column=0, padx=6, pady=3, sticky="NSEW")
-# Configurazione colonne per Matrix S
+
 for j in range(3):
     frame_s.columnconfigure(j, weight=1)
 for i in range(4):  
@@ -218,11 +243,24 @@ for i in range(4):
 sw1_vars = [tk.IntVar(value=1) for _ in range(3)]  
 frame_sw1 = ttk.LabelFrame(col_left, text='Switch sw1')  
 frame_sw1.grid(row=2, column=0, padx=6, pady=3, sticky="NSEW")
-for j in range(3):
+for j in range(4):  # Aumentato a 4 per il bottone di toggle
     frame_sw1.columnconfigure(j, weight=1)
-for i in range(3): 
+
+# Close loop 1
+sw1_toggle_var = tk.IntVar(value=1)  
+sw1_toggle_button = tk.Button(
+    frame_sw1, 
+    text="Close loop 1", 
+    command=toggle_sw1_loop,
+    relief=tk.SUNKEN,  
+    bg='lightgreen'   
+)
+sw1_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
+
+# Checkbox sw1
+for i in range(3):
     cb = ttk.Checkbutton(frame_sw1, text='sw1_' + str(i+1), variable=sw1_vars[i])  
-    cb.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  # .
+    cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW")
   
 # Setpoint x_sp  
 xsp_entries = [] 
@@ -246,8 +284,8 @@ init_pid_values = [
 ]
 frame_pid = ttk.LabelFrame(col_left, text='PID Matrix')  
 frame_pid.grid(row=4, column=0, padx=6, pady=3, sticky="NSEW")
-# Configurare le colonne per PID Matrix
-for j in range(4):  # 1 colonna per le etichette PID + 3 colonne per Kp, Ki, Kd
+
+for j in range(4): 
     frame_pid.columnconfigure(j, weight=1)
 # Column headers  
 ttk.Label(frame_pid, text='Kp').grid(row=0, column=1, padx=2, pady=2)  
@@ -262,6 +300,18 @@ for i in range(3):
         e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  # .
         row_entries.append(e)  
     pid_entries.append(row_entries)  
+
+# Reset PID f
+def reset_pid():
+    for row in pid_entries:
+        for entry in row:
+            entry.delete(0, tk.END)
+            entry.insert(0, "0")
+    update_status("PID values reset to zero", status_var, status_label)
+
+# Reset PID button
+reset_pid_button = ttk.Button(frame_pid, text="Reset PID", command=reset_pid)
+reset_pid_button.grid(row=4, column=0, columnspan=4, pady=5, sticky="EW")
   
 # Filters (Fourth order)  
 filtro_entries = []  
@@ -377,23 +427,49 @@ for filtro_idx, type in zip(range(2), filters_type):
             elif mode_var.get() == 'script':
                 open_script_window()
 
+        # Reset filters f
+        def reset_filter():
+            for e in first_stage_entries + second_stage_entries:
+                e.config(state='normal')
+                e.delete(0, tk.END)
+                e.insert(0, "0")
+            update_status("Filter values reset to zero", filter_box, filter_status_label)
+        
+        # Frame for radio buttons and reset button
         cb_frame = ttk.Frame(subframe)
         cb_frame.grid(row=2, column=0, columnspan=6, sticky='w', pady=(5,0))
         
         # Radio buttons for seleting the mode for filter design
         ttk.Radiobutton(cb_frame, text='Manual', variable=mode_var, value='manual', command=update_mode).grid(row=0, column=0, padx=5)
         ttk.Radiobutton(cb_frame, text='Script', variable=mode_var, value='script', command=update_mode).grid(row=0, column=1, padx=5)
+        
+        # Reset button
+        reset_filter_button = ttk.Button(cb_frame, text="Reset Filter", command=reset_filter)
+        reset_filter_button.grid(row=0, column=2, padx=5, pady=5, sticky="W")
 
   
 # Switch sw2  
 sw2_vars = [tk.IntVar(value=1) for _ in range(3)]  
 frame_sw2 = ttk.LabelFrame(col_right, text='Switch sw2')  
 frame_sw2.grid(row=1, column=0, padx=5, pady=5, sticky="NSEW")
-for j in range(3):
+for j in range(4):  # Aumentato a 4 per il bottone di toggle
     frame_sw2.columnconfigure(j, weight=1)
+
+# Close loop 2 button
+sw2_toggle_var = tk.IntVar(value=1)  
+sw2_toggle_button = tk.Button(
+    frame_sw2, 
+    text="Close loop 2", 
+    command=toggle_sw2_loop,
+    relief=tk.SUNKEN, 
+    bg='lightgreen'    
+)
+sw2_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
+
+# Checkbox sw2
 for i in range(3):  
     cb = ttk.Checkbutton(frame_sw2, text='sw2_' + str(i+1), variable=sw2_vars[i])  
-    cb.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  # .
+    cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW")
   
 # Offset x_os  
 xos_entries = []  
@@ -450,4 +526,4 @@ else:
     update_status('No serial port found!', status_var, status_label)  
 
   
-root.mainloop()  
+root.mainloop()
