@@ -303,11 +303,7 @@ for i in range(3):
 
 # Reset PID f
 def reset_pid():
-    for row in pid_entries:
-        for entry in row:
-            entry.delete(0, tk.END)
-            entry.insert(0, "0")
-    update_status("PID values reset to zero", status_var, status_label)
+    return True
 
 # Reset PID button
 reset_pid_button = ttk.Button(frame_pid, text="Reset PID", command=reset_pid)
@@ -429,11 +425,7 @@ for filtro_idx, type in zip(range(2), filters_type):
 
         # Reset filters f
         def reset_filter():
-            for e in first_stage_entries + second_stage_entries:
-                e.config(state='normal')
-                e.delete(0, tk.END)
-                e.insert(0, "0")
-            update_status("Filter values reset to zero", filter_box, filter_status_label)
+           return True
         
         # Frame for radio buttons and reset button
         cb_frame = ttk.Frame(subframe)
