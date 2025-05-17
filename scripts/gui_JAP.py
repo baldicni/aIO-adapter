@@ -111,7 +111,7 @@ def build_frame_data():
         # print("Offset: ", x_os)
 
         # D Matrix: 3x4 = 12 float
-        D = [np.float32(d_entries[i][j].get()) for j in range(4) for i in range(3)]
+        D = [np.float32(d_entries[i][j].get()) for i in range(3) for j in range(4)]
         # print("Matrix D: ", D)
 
         frame_format = '<12f3B3f3f3f3f10f10f10f3B3f12f'
