@@ -84,12 +84,21 @@ def build_frame_data():
             Kp = np.float32(pid_entries[dof][0].get())
             Ki = np.float32(pid_entries[dof][1].get())
             Kd = np.float32(pid_entries[dof][2].get())
-            PID1_values.append(Kp)
-            PID2_values.append(Ki)
-            PID3_values.append(Kd)
-        # print("PID values: ", PID1_values)
-        # print("PID values: ", PID2_values)
-        # print("PID values: ", PID3_values)
+            if dof == 0:
+                PID1_values.append(Kp)
+                PID1_values.append(Ki)
+                PID1_values.append(Kd)
+            elif dof == 1:
+                PID2_values.append(Kp)
+                PID2_values.append(Ki)
+                PID2_values.append(Kd)
+            else:
+                PID3_values.append(Kp)
+                PID3_values.append(Ki)
+                PID3_values.append(Kd)
+        print("PID1 values: ", PID1_values)
+        print("PID2 values: ", PID2_values)
+        print("PID3 values: ", PID3_values)
 
         # Filters: 10 floats fot each DOF
         filtro_idx = 1  # Solo 'Filter'
