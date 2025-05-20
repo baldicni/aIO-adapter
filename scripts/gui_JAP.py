@@ -70,6 +70,7 @@ def build_frame_data():
 
         # Switch 1: 3 byte
         sw1 = [np.int8(sw1_vars[i].get()) for i in range(3)]
+        sw1.append(np.int8(0))  # Add a zero to the end of the list
         # print("Switch 1: ", sw1)
 
         # Setpoint x_sp: 3 float
@@ -84,12 +85,21 @@ def build_frame_data():
             Kp = np.float32(pid_entries[dof][0].get())
             Ki = np.float32(pid_entries[dof][1].get())
             Kd = np.float32(pid_entries[dof][2].get())
-            PID1_values.append(Kp)
-            PID2_values.append(Ki)
-            PID3_values.append(Kd)
-        # print("PID values: ", PID1_values)
-        # print("PID values: ", PID2_values)
-        # print("PID values: ", PID3_values)
+            if dof == 0:
+                PID1_values.append(Kp)
+                PID1_values.append(Ki)
+                PID1_values.append(Kd)
+            elif dof == 1:
+                PID2_values.append(Kp)
+                PID2_values.append(Ki)
+                PID2_values.append(Kd)
+            else:
+                PID3_values.append(Kp)
+                PID3_values.append(Ki)
+                PID3_values.append(Kd)
+        print("PID1 values: ", PID1_values)
+        print("PID2 values: ", PID2_values)
+        print("PID3 values: ", PID3_values)
 
         # Filters: 10 floats fot each DOF
         filtro_idx = 1  # Solo 'Filter'
@@ -105,6 +115,7 @@ def build_frame_data():
 
         # Switch 2: 3 byte
         sw2 = [np.int8(sw2_vars[i].get()) for i in range(3)]
+        sw2.append(np.int8(0))  # Add a zero to the end of the list
         # print("Switch 2: ", sw2)
 
         # Offset x_os: 3 float
@@ -115,7 +126,7 @@ def build_frame_data():
         D = [np.float32(d_entries[i][j].get()) for i in range(3) for j in range(4)]
         # print("Matrix D: ", D)
 
-        frame_format = '<12f3B3f3f3f3f10f10f10f3B3f12f'
+        frame_format = '<12f4B3f3f3f3f10f10f10f4B3f12f'
 
         # Insert the function to print in the gui the number of bytes of frame data
         
