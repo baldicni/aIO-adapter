@@ -5,6 +5,7 @@ import serial
 import os  
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
+from oscilloscope import open_oscilloscope  
 
 
 
@@ -508,7 +509,8 @@ status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")
   
 # Send button  
 send_button = ttk.Button(main_frame, text='Send Data', command=invia_dati)
-send_button.grid(row=1, column=0, columnspan=2, pady=15)
+send_button.grid(row=1, column=0, columnspan=1, pady=15)
+
   
 # Serial port detection at startup  
 uart_port = find_uart_port()  
