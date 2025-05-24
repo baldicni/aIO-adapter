@@ -5,7 +5,6 @@ import serial
 import os  
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
-from oscilloscope import open_oscilloscope  
 
 
 
@@ -417,6 +416,9 @@ for filtro_idx, type in zip(range(2), filters_type):
                     script_params['Q'] = Q_var.get()
 
                     coefs = filter_design(fs=fs, f0=f0, order=order, type=ftype, Q=Q)
+                    if ftype == 'notch':
+                        coefs = np.concatenate((coefs, coefs))
+
                     for e, val in zip(first_stage_entries + second_stage_entries, coefs):
                         e.config(state='normal')
                         e.delete(0, tk.END)
