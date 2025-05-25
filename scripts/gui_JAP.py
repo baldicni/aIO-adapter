@@ -5,8 +5,7 @@ import serial
 import os  
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
-
-
+import os
 
 ''' 
 SCRIPT FILTER DESIGN
@@ -194,6 +193,13 @@ root.after(0, lift_window)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 root.title('Data Sender to STM32')
+
+#root.iconbitmap('gui_JAP.ico')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+large_icon = tk.PhotoImage(file=os.path.join(script_dir, "gui_JAP_64.png"))
+small_icon = tk.PhotoImage(file=os.path.join(script_dir, "gui_JAP_24.png"))
+root.iconphoto(True, large_icon, small_icon)
+
     
 main_frame = ttk.Frame(root)  
 main_frame.grid(row=0, column=0, padx=10, pady=10, sticky="NSEW") 
