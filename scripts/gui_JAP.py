@@ -245,14 +245,19 @@ init_values_S = [
 frame_s = ttk.LabelFrame(col_left, text='Matrix S')  
 frame_s.grid(row=1, column=0, padx=6, pady=3, sticky="NSEW")
 
+# Add column labels
 for j in range(3):
-    frame_s.columnconfigure(j, weight=1)
+    frame_s.columnconfigure(j+1, weight=1)
+    ttk.Label(frame_s, text=f'DOF {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
+
+# Add row labels and entries
 for i in range(4):  
     row_entries = []  
+    ttk.Label(frame_s, text=f'ADC {i+1}').grid(row=i+1, column=0, padx=2, pady=2, sticky="EW")
     for j in range(3):  
         e = ttk.Entry(frame_s, width=5)  
         e.insert(0, init_values_S[i][j])  
-        e.grid(row=i, column=j, padx=2, pady=2, sticky="EW")  # .
+        e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  # .
         row_entries.append(e)  
     s_entries.append(row_entries)  
   
@@ -506,14 +511,19 @@ init_values_D = [
 frame_d = ttk.LabelFrame(col_right, text='Matrix D')  
 frame_d.grid(row=3, column=0, padx=5, pady=5, sticky="NSEW")
 
+# Add column labels
 for j in range(4):
-    frame_d.columnconfigure(j, weight=1)
+    frame_d.columnconfigure(j+1, weight=1)
+    ttk.Label(frame_d, text=f'PWM {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
+
+# Add row labels and entries
 for i in range(np.shape(init_values_D)[0]):  
     row_entries = []  
+    ttk.Label(frame_d, text=f'DOF {i+1}').grid(row=i+1, column=0, padx=2, pady=2, sticky="EW")
     for j in range(np.shape(init_values_D)[1]):  
         e = ttk.Entry(frame_d, width=5)  
         e.insert(0, init_values_D[i][j])  
-        e.grid(row=i, column=j, padx=2, pady=2, sticky="EW")  
+        e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  
         row_entries.append(e)  
     d_entries.append(row_entries)  
 
