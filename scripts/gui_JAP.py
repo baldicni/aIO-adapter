@@ -63,7 +63,7 @@ def build_frame_data():
         '''
     if True:
         # S Matrix 4x3 = 12 float
-        S = [np.float32(s_entries[i][j].get()) for j in range(3) for i in range(4)]
+        S = [np.float32(s_entries[i][j].get()) for i in range(4) for j in range(3)]
         # print("Sensing Matrix: ", S)
 
         # Switch 1: 3 byte
