@@ -66,11 +66,6 @@ def build_frame_data():
         S = [np.float32(s_entries[i][j].get()) for i in range(4) for j in range(3)]
         # print("Sensing Matrix: ", S)
 
-        # Switch 1: 3 byte
-        sw1 = [np.int8(sw1_vars[i].get()) for i in range(3)]
-        sw1.append(np.int8(0))  # Add a zero to the end of the list
-        # print("Switch 1: ", sw1)
-
         # Setpoint x_sp: 3 float
         x_sp = [np.float32(xsp_entries[i].get()) for i in range(3)]
         # print("Setpoint: ", x_sp)
@@ -111,11 +106,6 @@ def build_frame_data():
         # print("Filter values: ", filter_values_flat2)
         # print("Filter values: ", filter_values_flat3)
 
-        # Switch 2: 3 byte
-        sw2 = [np.int8(sw2_vars[i].get()) for i in range(3)]
-        sw2.append(np.int8(0))  # Add a zero to the end of the list
-        # print("Switch 2: ", sw2)
-
         # Offset x_os: 3 float
         x_os = [np.float32(xos_entries[i].get()) for i in range(3)]
         # print("Offset: ", x_os)
@@ -124,22 +114,77 @@ def build_frame_data():
         D = [np.float32(d_entries[i][j].get()) for i in range(3) for j in range(4)]
         # print("Matrix D: ", D)
 
-        frame_format = '<12f4B3f3f3f3f10f10f10f4B3f12f'
+        # Control vector: 4 byte
+        ctrl = [np.uint8(0), np.uint8(0), np.uint8(0), np.uint8(0XA1)]  # Placeholder for control vector, can be modified later
+
+        #frame_format = '<12f4B3f3f3f3f10f10f10f4B3f12f4B'
+        frame_format = '<12f3f3f3f3f10f10f10f3f12f4B'
 
         # Insert the function to print in the gui the number of bytes of frame data
         
-        frame_data = struct.pack(frame_format, *S, *sw1, *x_sp, 
+        frame_data = struct.pack(frame_format, *S, *x_sp, 
                                  *PID1_values, *PID2_values, *PID3_values, 
                                  *filter_values_flat1, *filter_values_flat2, *filter_values_flat3, 
-                                 *sw2, *x_os, *D)
+                                 *x_os, *D, *ctrl)
         print("Frame data: ", frame_data)
         print("Frame data length: ", len(frame_data))
         return frame_data
-    
-def invia_dati():  
 
+def build_system_frame_data(reset_bytes=None):
+    ''' 
+        - IP destination address: 4 byte
+        - Switch1 sw1: 4 byte
+        - Switch2 sw2: 4 byte
+        - Future use bytes: 260 bytes
+        - Reset bytes: 4 byte
+        - Control vector: 4 byte
+
+        '''
+    if True:
+        # IP destination address
+        # Convert string IP "192.168.33.34" to uint32 representation (big-endian)
+        ip_str = "192.168.33.34"
+        ip_bytes = [int(x) for x in ip_str.split('.')]
+        dest_ip_addr = [np.uint8(b) for b in ip_bytes]
+
+        # Switch 1: 3 byte
+        sw1 = [np.uint8(sw1_vars[i].get()) for i in range(3)]
+        sw1.append(np.uint8(0))  # Add a zero to the end of the list
+        # print("Switch 1: ", sw1)
+
+        # Switch 2: 3 byte
+        sw2 = [np.uint8(sw2_vars[i].get()) for i in range(3)]
+        sw2.append(np.uint8(0))  # Add a zero to the end of the list
+        # print("Switch 2: ", sw2)
+
+        # Empty bytes
+        empty_bytes = [np.uint8(0) for i in range(260)]  # Placeholder for empty bytes, can be modified later
+
+        # Reset bytes: 4 byte
+        if reset_bytes is None:
+            reset_bytes = [np.uint8(0), np.uint8(0), np.uint8(0), np.uint8(0)]  # Placeholder for reset bytes, can be modified later
+        
+        # Control vector: 4 byte
+        ctrl = [np.uint8(0), np.uint8(0), np.uint8(0), np.uint8(0XA3)]  # Placeholder for control vector, can be modified later
+
+        frame_format = '<4B4B4B4B260B4B'
+
+        # Insert the function to print in the gui the number of bytes of frame data
+        
+        frame_data = struct.pack(frame_format, *dest_ip_addr, *sw1, *sw2, *reset_bytes, *empty_bytes, *ctrl)
+        print("Sys frame data: ", frame_data)
+        print("Sys frame data length: ", len(frame_data))
+        return frame_data
+
+def send_config_data():
     frame_data = build_frame_data()
+    invia_dati(frame_data)
 
+def send_system_data():
+    frame_data = build_system_frame_data()
+    invia_dati(frame_data)
+
+def invia_dati(frame_data):
     if uart_port:
         if frame_data is not None:
             ser = serial.Serial(uart_port, 115200, timeout=1)
@@ -171,6 +216,8 @@ def toggle_sw1_loop():
         bg='lightgreen' if new_state else 'lightgray'
     )
 
+    send_system_data()  # Send the updated state of sw1 to the STM32
+
 def toggle_sw2_loop():
     current_state = sw2_toggle_var.get()
     new_state = 0 if current_state else 1
@@ -185,6 +232,8 @@ def toggle_sw2_loop():
         relief=tk.SUNKEN if new_state else tk.RAISED,
         bg='lightgreen' if new_state else 'lightgray'
     )
+
+    send_system_data()  # Send the updated state of sw2 to the STM32
 
 
 root = tk.Tk()
@@ -325,7 +374,9 @@ for i in range(3):
 
 # Reset PID f
 def reset_pid():
-    return True
+    reset_bytes = [np.uint8(0X07), np.uint8(0), np.uint8(0), np.uint8(0)]
+    frame_data = build_system_frame_data(reset_bytes)
+    invia_dati(frame_data)
 
 # Reset PID button
 reset_pid_button = ttk.Button(frame_pid, text="Reset PID", command=reset_pid)
@@ -450,7 +501,9 @@ for filtro_idx, type in zip(range(2), filters_type):
 
         # Reset filters f
         def reset_filter():
-           return True
+            reset_bytes = [np.uint8(0), np.uint8(0XFF), np.uint8(0), np.uint8(0)]
+            frame_data = build_system_frame_data(reset_bytes)
+            invia_dati(frame_data)
         
         # Frame for radio buttons and reset button
         cb_frame = ttk.Frame(subframe)
@@ -537,7 +590,7 @@ status_label = tk.Label(main_frame, textvariable=status_var, bg='black', fg='whi
 status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")  
   
 # Send button  
-send_button = ttk.Button(main_frame, text='Send Data', command=invia_dati)
+send_button = ttk.Button(main_frame, text='Send Data', command=send_config_data)
 send_button.grid(row=1, column=0, columnspan=1, pady=15)
 
   
