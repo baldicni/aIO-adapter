@@ -1,11 +1,10 @@
-import tkinter as tk  
-from tkinter import ttk  
-import struct  
-import serial  
-import os  
+import tkinter as tk
+from tkinter import ttk
+import struct
+import serial
+import os
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
-import os
 
 ''' 
 SCRIPT FILTER DESIGN
@@ -114,18 +113,35 @@ def build_frame_data():
         D = [np.float32(d_entries[i][j].get()) for i in range(3) for j in range(4)]
         # print("Matrix D: ", D)
 
+        # Limits: 3x2 = 6 float
+        limits = [np.float32(-10.0), np.float32(10.0),
+                  np.float32(-10.0), np.float32(10.0),
+                  np.float32(-10.0), np.float32(10.0)]
+
         # Control vector: 4 byte
         ctrl = [np.uint8(0), np.uint8(0), np.uint8(0), np.uint8(0XA1)]  # Placeholder for control vector, can be modified later
 
         #frame_format = '<12f4B3f3f3f3f10f10f10f4B3f12f4B'
-        frame_format = '<12f3f3f3f3f10f10f10f3f12f4B'
+        # Dynamically build frame_format based on DOF and NUM_OF_ADC
+        DOF = 3
+        NUM_OF_ADC = 4
+        # S Matrix: NUM_OF_ADC * DOF floats
+        # Setpoint: DOF floats
+        # PID: DOF * 3 floats (Kp, Ki, Kd)
+        # Filter: DOF * 10 floats (2x5 per DOF)
+        # Offset: DOF floats
+        # D Matrix: DOF * NUM_OF_ADC floats
+        # Limits: DOF * 3 floats
+        # Control: 4 bytes
+
+        frame_format = f'<{NUM_OF_ADC * DOF}f{DOF}f{DOF * 3}f{DOF * 10}f{DOF}f{DOF * NUM_OF_ADC}f{DOF * 2}f4B'
 
         # Insert the function to print in the gui the number of bytes of frame data
         
         frame_data = struct.pack(frame_format, *S, *x_sp, 
                                  *PID1_values, *PID2_values, *PID3_values, 
                                  *filter_values_flat1, *filter_values_flat2, *filter_values_flat3, 
-                                 *x_os, *D, *ctrl)
+                                 *x_os, *D, *limits, *ctrl)
         print("Frame data: ", frame_data)
         print("Frame data length: ", len(frame_data))
         return frame_data
@@ -143,8 +159,14 @@ def build_system_frame_data(reset_bytes=None):
     if True:
         # IP destination address
         # Convert string IP "192.168.33.34" to uint32 representation (big-endian)
-        ip_str = "192.168.33.34"
-        ip_bytes = [int(x) for x in ip_str.split('.')]
+        ip_str = ip_addr_var.get()
+        try:
+            ip_bytes = [int(x) for x in ip_str.split('.')]
+            if len(ip_bytes) != 4 or not all(0 <= b <= 255 for b in ip_bytes):
+                raise ValueError
+        except Exception:
+            update_status('Invalid IP address format!', status_var, status_label)
+            ip_bytes = [192, 168, 33, 34]
         dest_ip_addr = [np.uint8(b) for b in ip_bytes]
 
         # Switch 1: 3 byte
@@ -158,7 +180,7 @@ def build_system_frame_data(reset_bytes=None):
         # print("Switch 2: ", sw2)
 
         # Empty bytes
-        empty_bytes = [np.uint8(0) for i in range(260)]  # Placeholder for empty bytes, can be modified later
+        empty_bytes = [np.uint8(0) for i in range(284)]  # Placeholder for empty bytes, can be modified later
 
         # Reset bytes: 4 byte
         if reset_bytes is None:
@@ -167,7 +189,7 @@ def build_system_frame_data(reset_bytes=None):
         # Control vector: 4 byte
         ctrl = [np.uint8(0), np.uint8(0), np.uint8(0), np.uint8(0XA3)]  # Placeholder for control vector, can be modified later
 
-        frame_format = '<4B4B4B4B260B4B'
+        frame_format = '<4B4B4B4B284B4B'
 
         # Insert the function to print in the gui the number of bytes of frame data
         
@@ -590,8 +612,17 @@ status_label = tk.Label(main_frame, textvariable=status_var, bg='black', fg='whi
 status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")  
   
 # Send button  
-send_button = ttk.Button(main_frame, text='Send Data', command=send_config_data)
+send_button = ttk.Button(main_frame, text='Config loops', command=send_config_data)
 send_button.grid(row=1, column=0, columnspan=1, pady=15)
+
+# IP Address field
+ip_addr_var = tk.StringVar(value="192.168.33.34")
+frame_ip = ttk.LabelFrame(main_frame, text='Destination IP Address')
+frame_ip.grid(row=1, column=1, padx=6, pady=3, sticky="NSEW")
+frame_ip.columnconfigure(0, weight=1)
+ttk.Label(frame_ip, text="IP Address:").grid(row=0, column=0, padx=5, pady=5, sticky="W")
+ip_entry = ttk.Entry(frame_ip, textvariable=ip_addr_var, width=18)
+ip_entry.grid(row=0, column=1, padx=5, pady=5, sticky="EW")
 
   
 # Serial port detection at startup  
