@@ -45,8 +45,6 @@ def find_uart_port():
 def update_status(msg, frame, frame_label):  
     frame.set(msg)  
     frame_label.update_idletasks()  
-    if frame == filter_box:
-        frame_label.after(2000, lambda: frame.set(""))
 
 def build_frame_data():
     ''' 
@@ -94,10 +92,9 @@ def build_frame_data():
         print("PID3 values: ", PID3_values)
 
         # Filters: 10 floats fot each DOF
-        filtro_idx = 1  # Solo 'Filter'
-        filtro_entries_filter_1 = filtro_entries[filtro_idx]
-        filtro_entries_filter_2 = filtro_entries[filtro_idx]
-        filtro_entries_filter_3 = filtro_entries[filtro_idx]
+        filtro_entries_filter_1 = filtro_entries[1]  # DOF1
+        filtro_entries_filter_2 = filtro_entries[2]  # DOF2
+        filtro_entries_filter_3 = filtro_entries[3]  # DOF3
         filter_values_flat1 = [np.float32(e.get()) for stage in filtro_entries_filter_1 for e in stage]  # 10 valori
         filter_values_flat2 = [np.float32(e.get()) for stage in filtro_entries_filter_2 for e in stage]  # 10 valori
         filter_values_flat3 = [np.float32(e.get()) for stage in filtro_entries_filter_3 for e in stage]  # 10 valori
@@ -284,7 +281,7 @@ main_frame.rowconfigure(2, weight=0)
 col_left = ttk.Frame(main_frame)  
 col_left.grid(row=0, column=0, sticky='NSEW')
 col_left.columnconfigure(0, weight=1)  
-for i in range(5): 
+for i in range(6): 
     col_left.rowconfigure(i, weight=0)
 
 col_right = ttk.Frame(main_frame)  
@@ -431,16 +428,49 @@ reset_pid_button2.grid(row=5, column=2, columnspan=1, pady=5, sticky="EW")
 # Reset PID3 button
 reset_pid_button3 = ttk.Button(frame_pid, text="Reset PID3", command=lambda: reset_pid(3))
 reset_pid_button3.grid(row=5, column=3, columnspan=1, pady=5, sticky="EW")
+
+
+frame_antialiasing = ttk.LabelFrame(col_left, text='Anti-aliasing Filter')  
+frame_antialiasing.grid(row=5, column=0, padx=6, pady=3, sticky="NSEW")
+frame_antialiasing.columnconfigure(0, weight=0)  
+for j in range(1, 6):  # 5 colonne per i valori numerici
+    frame_antialiasing.columnconfigure(j, weight=1)
+
+# First stage 
+ttk.Label(frame_antialiasing, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)  
+first_stage_entries = []
+first_stage_init_values = ["0.004824343357716229", "0.009648686539896796", "0.004824343384506867", "1.048599576362613", "-0.2961403575616704"]
+second_stage_init_entries = ["1.0", "2.000000036385403", "0.9999999944467821", "1.3209134308194246", "-0.632738792885275"]
+for i in range(5):  
+    e = ttk.Entry(frame_antialiasing, width=4) 
+    e.insert(0, first_stage_init_values[i]) 
+    e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")
+    e.state(['readonly']) 
+    first_stage_entries.append(e)  
+
+# Second stage  
+ttk.Label(frame_antialiasing, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)  
+second_stage_entries = []  
+for i in range(5):  
+    e = ttk.Entry(frame_antialiasing, width=4)  
+    e.insert(0, second_stage_init_entries[i])
+    e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")
+    e.state(['readonly']) 
+    second_stage_entries.append(e)  
+
+
   
 # Filters (Fourth order)  
-filtro_entries = []  
+filtro_entries = [[], [], [], []]  
+filtro_entries[0] = (first_stage_entries, second_stage_entries)
+
 frame_filtri = ttk.LabelFrame(col_right, text='Fourth Order Filters')  
 frame_filtri.grid(row=0, column=0, padx=5, pady=5, sticky="NSEW")
 frame_filtri.columnconfigure(0, weight=1) 
-filters_type = ['Anti-aliasing', 'Filter']
-for filtro_idx, type in zip(range(2), filters_type):  
-    subframe = ttk.LabelFrame(frame_filtri, text=(type if type == 'Anti-aliasing' else 'Loop filters'))  
-    subframe.grid(row=filtro_idx, column=0, padx=2, pady=2, sticky='NSEW')
+filters_type = ['Filter DOF1', 'Filter DOF2', 'Filter DOF3']
+for filtro_idx, type in zip(range(1,4), filters_type):  
+    subframe = ttk.LabelFrame(frame_filtri, text=type)  
+    subframe.grid(row=filtro_idx-1, column=0, padx=2, pady=2, sticky='NSEW')
     subframe.columnconfigure(0, weight=0)  
     for j in range(1, 6):  # 5 colonne per i valori numerici
         subframe.columnconfigure(j, weight=1)
@@ -467,106 +497,123 @@ for filtro_idx, type in zip(range(2), filters_type):
         second_stage_entries.append(e)  
     filtro_entries.append((first_stage_entries, second_stage_entries))  
     
-    if type == 'Filter':
-    # Only for the 'Filter' (idx == 1)
-  
-        mode_var = tk.StringVar(value='manual')
-
-        # Dictionary to store the script parameters
-        script_params = {
-            'fs': '1000',
-            'f0': '100',
-            'order': '4',
-            'type': 'lowpass',
-            'Q': ''
-        }
-
-        def open_script_window():
-            win = tk.Toplevel(root)
-            win.title("Filter Design Parameters")
-
-            fs_var = tk.StringVar(value=script_params['fs'])
-            f0_var = tk.StringVar(value=script_params['f0'])
-            order_var = tk.StringVar(value=script_params['order'])
-            type_var = tk.StringVar(value=script_params['type'])
-            Q_var = tk.StringVar(value=script_params['Q'])
-
-            win.columnconfigure(0, weight=0)
-            win.columnconfigure(1, weight=1)
-
-            ttk.Label(win, text="Sampling frequency:").grid(row=0, column=0, sticky='w', padx=5, pady=3)
-            ttk.Entry(win, textvariable=fs_var).grid(row=0, column=1, sticky="EW", padx=5, pady=3)
-
-            ttk.Label(win, text="Cut-off frequency:").grid(row=1, column=0, sticky='w', padx=5, pady=3)
-            ttk.Entry(win, textvariable=f0_var).grid(row=1, column=1, sticky="EW", padx=5, pady=3)
-
-            ttk.Label(win, text="Filter order:").grid(row=2, column=0, sticky='w', padx=5, pady=3)
-            ttk.Entry(win, textvariable=order_var).grid(row=2, column=1, sticky="EW", padx=5, pady=3)
-
-            ttk.Label(win, text="Q factor (for notch filter):").grid(row=3, column=0, sticky='w', padx=5, pady=3)
-            ttk.Entry(win, textvariable=Q_var).grid(row=3, column=1, sticky="EW", padx=5, pady=3)
-
-            ttk.Label(win, text="Filter type:").grid(row=4, column=0, sticky='w', padx=5, pady=3)
-            type_menu = ttk.Combobox(win, textvariable=type_var, values=['lowpass', 'highpass', 'notch'], state='readonly')
-            type_menu.grid(row=4, column=1, sticky="EW", padx=5, pady=3)
-
-            def compute_and_fill():
-                try:
-                    fs = np.float32(fs_var.get())
-                    f0 = np.float32(f0_var.get())
-                    order = np.int8(order_var.get())
-                    ftype = type_var.get()
-                    Q_text = Q_var.get()
-                    Q = np.float32(Q_var.get()) if Q_text else None
-                    if ftype == 'notch' and Q is None:
-                        update_status("Error: Q factor is required for notch filter.", filter_box, filter_status_label)
-                        return
+    if type.startswith('Filter DOF'):
+        dof_index = int(type[-1])
+        
+        # Crea una classe per gestire ogni DOF separatamente
+        class DOF_Filter:
+            def __init__(self, index, entries):
+                self.index = index
+                self.entries = entries
+                self.mode_var = tk.StringVar(value='manual')
+                self.script_params = {
+                    'fs': '1000',
+                    'f0': '100',
+                    'order': '4',
+                    'type': 'lowpass',
+                    'Q': ''
+                }
             
-                    # Save the parameters to the script_params dictionary
-                    script_params['fs'] = fs_var.get()
-                    script_params['f0'] = f0_var.get()
-                    script_params['order'] = order_var.get()
-                    script_params['type'] = type_var.get()
-                    script_params['Q'] = Q_var.get()
+            def open_script_window(self):
+                win = tk.Toplevel(root)
+                win.title(f"Filter Design Parameters - DOF {self.index}")
 
-                    coefs = filter_design(fs=fs, f0=f0, order=order, type=ftype, Q=Q)
-                    if ftype == 'notch':
-                        coefs = np.concatenate((coefs, coefs))
+                fs_var = tk.StringVar(value=self.script_params['fs'])
+                f0_var = tk.StringVar(value=self.script_params['f0'])
+                order_var = tk.StringVar(value=self.script_params['order'])
+                type_var = tk.StringVar(value=self.script_params['type'])
+                Q_var = tk.StringVar(value=self.script_params['Q'])
 
-                    for e, val in zip(first_stage_entries + second_stage_entries, coefs):
+                win.columnconfigure(0, weight=0)
+                win.columnconfigure(1, weight=1)
+
+                ttk.Label(win, text="Sampling frequency:").grid(row=0, column=0, sticky='w', padx=5, pady=3)
+                ttk.Entry(win, textvariable=fs_var).grid(row=0, column=1, sticky="EW", padx=5, pady=3)
+
+                ttk.Label(win, text="Cut-off frequency:").grid(row=1, column=0, sticky='w', padx=5, pady=3)
+                ttk.Entry(win, textvariable=f0_var).grid(row=1, column=1, sticky="EW", padx=5, pady=3)
+
+                ttk.Label(win, text="Filter order:").grid(row=2, column=0, sticky='w', padx=5, pady=3)
+                ttk.Entry(win, textvariable=order_var).grid(row=2, column=1, sticky="EW", padx=5, pady=3)
+
+                ttk.Label(win, text="Q factor (for notch filter):").grid(row=3, column=0, sticky='w', padx=5, pady=3)
+                ttk.Entry(win, textvariable=Q_var).grid(row=3, column=1, sticky="EW", padx=5, pady=3)
+
+                ttk.Label(win, text="Filter type:").grid(row=4, column=0, sticky='w', padx=5, pady=3)
+                type_menu = ttk.Combobox(win, textvariable=type_var, values=['lowpass', 'highpass', 'notch'], state='readonly')
+                type_menu.grid(row=4, column=1, sticky="EW", padx=5, pady=3)
+
+                def compute_and_fill():
+                    try:
+                        fs = np.float32(fs_var.get())
+                        f0 = np.float32(f0_var.get())
+                        order = np.int8(order_var.get())
+                        ftype = type_var.get()
+                        Q_text = Q_var.get()
+                        Q = np.float32(Q_var.get()) if Q_text else None
+                        if ftype == 'notch' and Q is None:
+                            update_status("Error: Q factor is required for notch filter.", status_var, status_label)
+                            return
+                    
+                        # Salva i parametri
+                        self.script_params = {
+                            'fs': fs_var.get(),
+                            'f0': f0_var.get(),
+                            'order': order_var.get(),
+                            'type': type_var.get(),
+                            'Q': Q_var.get()
+                        }
+
+                        coefs = filter_design(fs=fs, f0=f0, order=order, type=ftype, Q=Q)
+                        if ftype == 'notch':
+                            coefs = np.concatenate((coefs, coefs))
+
+                        for e, val in zip(self.entries[0] + self.entries[1], coefs):
+                            e.config(state='normal')
+                            e.delete(0, tk.END)
+                            e.insert(0, f"{val:.6g}")
+                            e.config(state='disabled')
+                        win.destroy()
+                    except Exception as e:
+                        update_status(f"Error: Invalid parameters:\n{e}", status_var, status_label)
+
+                ttk.Button(win, text="Compute", command=compute_and_fill).grid(row=5, column=0, columnspan=2, pady=10)
+            
+            def update_mode(self):
+                if self.mode_var.get() == 'manual':
+                    for e in self.entries[0] + self.entries[1]:
                         e.config(state='normal')
-                        e.delete(0, tk.END)
-                        e.insert(0, f"{val:.6g}")
-                        e.config(state='disabled')
-                    win.destroy()
-                except Exception as e:
-                    update_status(f"Error: Invalid parameters:\n{e}", filter_box, filter_status_label)
-
-            ttk.Button(win, text="Compute", command=compute_and_fill).grid(row=5, column=0, columnspan=2, pady=10)
-
-        def update_mode():
-            if mode_var.get() == 'manual':
-                for e in first_stage_entries + second_stage_entries:
-                    e.config(state='normal')
-            elif mode_var.get() == 'script':
-                open_script_window()
-
-        # Reset filters f
-        def reset_filter():
-            reset_bytes = [np.uint8(0), np.uint8(0XFF), np.uint8(0), np.uint8(0)]
-            frame_data = build_system_frame_data(reset_bytes)
-            invia_dati(frame_data)
+                elif self.mode_var.get() == 'script':
+                    self.open_script_window()
+            
+            def reset_filter(self):
+                match self.index:
+                    case 1:
+                        reset_bytes = [np.uint8(0), np.uint8(0X10), np.uint8(0), np.uint8(0)]
+                    case 2:
+                        reset_bytes = [np.uint8(0), np.uint8(0X20), np.uint8(0), np.uint8(0)]
+                    case 3:
+                        reset_bytes = [np.uint8(0), np.uint8(0X40), np.uint8(0), np.uint8(0)]
+                
+                frame_data = build_system_frame_data(reset_bytes)
+                invia_dati(frame_data)
+        
+        # Crea un'istanza per questo DOF
+        dof_filter = DOF_Filter(dof_index, (first_stage_entries, second_stage_entries))
         
         # Frame for radio buttons and reset button
         cb_frame = ttk.Frame(subframe)
         cb_frame.grid(row=2, column=0, columnspan=6, sticky='w', pady=(5,0))
         
-        # Radio buttons for seleting the mode for filter design
-        ttk.Radiobutton(cb_frame, text='Manual', variable=mode_var, value='manual', command=update_mode).grid(row=0, column=0, padx=5)
-        ttk.Radiobutton(cb_frame, text='Script', variable=mode_var, value='script', command=update_mode).grid(row=0, column=1, padx=5)
+        # Radio buttons for selecting the mode for filter design
+        ttk.Radiobutton(cb_frame, text='Manual', variable=dof_filter.mode_var, 
+                    value='manual', command=dof_filter.update_mode).grid(row=0, column=0, padx=5)
+        ttk.Radiobutton(cb_frame, text='Script', variable=dof_filter.mode_var, 
+                    value='script', command=dof_filter.update_mode).grid(row=0, column=1, padx=5)
         
         # Reset button
-        reset_filter_button = ttk.Button(cb_frame, text="Reset Filter", command=reset_filter)
+        reset_filter_button = ttk.Button(cb_frame, text=f"Reset Filter DOF{dof_filter.index}", 
+                                    command=dof_filter.reset_filter)
         reset_filter_button.grid(row=0, column=2, padx=5, pady=5, sticky="W")
 
   
@@ -643,9 +690,6 @@ for i in range(np.shape(init_values_D)[0]):
         row_entries.append(e)  
     d_entries.append(row_entries)  
 
-filter_box = tk.StringVar()  
-filter_status_label = tk.Label(frame_filtri, textvariable=filter_box, bg='black', fg='white', relief='sunken', anchor='w', width=50, height=2)  
-filter_status_label.grid(row=2, column=0, columnspan=1, pady=10, sticky="NSEW")  
 
 # Status box (white text)  
 status_var = tk.StringVar()  
@@ -661,11 +705,16 @@ ip_addr_var = tk.StringVar(value="192.168.33.34")
 frame_ip = ttk.LabelFrame(main_frame, text='Destination IP Address')
 frame_ip.grid(row=1, column=1, padx=6, pady=3, sticky="NSEW")
 frame_ip.columnconfigure(0, weight=1)
+frame_ip.columnconfigure(1, weight=1)
+frame_ip.columnconfigure(2, weight=0)
+
 ttk.Label(frame_ip, text="IP Address:").grid(row=0, column=0, padx=5, pady=5, sticky="W")
 ip_entry = ttk.Entry(frame_ip, textvariable=ip_addr_var, width=18)
-ip_entry.grid(row=0, column=1, padx=5, pady=5, sticky="EW")
+ip_entry.grid(row=0, column=1, padx=5, pady=5, sticky="EW")  
 
-  
+send_ip_button = ttk.Button(frame_ip, text='Update IP', command=send_system_data)
+send_ip_button.grid(row=0, column=2, padx=5, pady=5, sticky="E")
+
 # Serial port detection at startup  
 uart_port = find_uart_port()  
 if uart_port:  
