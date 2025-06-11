@@ -259,7 +259,7 @@ def toggle_sw2_loop():
 
 
 root = tk.Tk()
-root.minsize(850, 650)
+root.minsize(1100, 900)
 root.after(0, lift_window)
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
@@ -299,11 +299,13 @@ init_fs_values = ["1000"]
 frame_fs = ttk.LabelFrame(col_left, text='Sampling frequency')
 frame_fs.grid(row=0, column=0, padx=6, pady=(6, 3), sticky="NSEW")
 frame_fs.columnconfigure(0, weight=1)  
-for i in range(1):
-    e = ttk.Entry(frame_fs, width=7)
-    e.insert(0, init_fs_values[i])
+
+for i in range(1):  
+    e = ttk.Entry(frame_fs, width=7, style='Flat.TEntry')  
+    e.insert(0, init_fs_values[i])  
+    e.state(['readonly']) 
     e.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  
-    fs_entries.append(e)
+    fs_entries.append(e)  
 
 # Matrix S
 s_entries = []  
@@ -350,10 +352,15 @@ sw1_toggle_button = tk.Button(
 )
 sw1_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
 
-# Checkbox sw1
-for i in range(3):
-    cb = ttk.Checkbutton(frame_sw1, text='sw1_' + str(i+1), variable=sw1_vars[i])  
-    cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW")
+# Checkbox sw1  
+for i in range(3):  
+    cb = ttk.Checkbutton(  
+        frame_sw1,   
+        text='sw1_' + str(i+1),   
+        variable=sw1_vars[i],  
+        command=lambda i=i: (sw1_vars[i].get(), send_system_data()) 
+    )    
+    cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW") 
   
 # Setpoint x_sp  
 xsp_entries = [] 
@@ -395,14 +402,35 @@ for i in range(3):
     pid_entries.append(row_entries)  
 
 # Reset PID f
-def reset_pid():
-    reset_bytes = [np.uint8(0X07), np.uint8(0), np.uint8(0), np.uint8(0)]
+def reset_pid(index):
+    match index:
+        case 1:
+            reset_bytes = [np.uint8(0X01), np.uint8(0), np.uint8(0), np.uint8(0)]
+        case 2:
+            reset_bytes = [np.uint8(0X02), np.uint8(0), np.uint8(0), np.uint8(0)]
+        case 3:
+            reset_bytes = [np.uint8(0X04), np.uint8(0), np.uint8(0), np.uint8(0)]
+        case 4:
+            reset_bytes = [np.uint8(0X07), np.uint8(0), np.uint8(0), np.uint8(0)]
+    
     frame_data = build_system_frame_data(reset_bytes)
     invia_dati(frame_data)
 
 # Reset PID button
-reset_pid_button = ttk.Button(frame_pid, text="Reset PID", command=reset_pid)
-reset_pid_button.grid(row=4, column=0, columnspan=4, pady=5, sticky="EW")
+reset_pid_button = ttk.Button(frame_pid, text="Reset all PIDs", command= lambda: reset_pid(4))
+reset_pid_button.grid(row=6, column=1, columnspan=3, pady=5, sticky="EW")
+
+# Reset PID1 button
+reset_pid_button1 = ttk.Button(frame_pid, text="Reset PID1", command=lambda: reset_pid(1))
+reset_pid_button1.grid(row=5, column=1, columnspan=1, pady=5, sticky="EW")
+
+# Reset PID2 button
+reset_pid_button2 = ttk.Button(frame_pid, text="Reset PID2", command=lambda: reset_pid(2))
+reset_pid_button2.grid(row=5, column=2, columnspan=1, pady=5, sticky="EW")
+
+# Reset PID3 button
+reset_pid_button3 = ttk.Button(frame_pid, text="Reset PID3", command=lambda: reset_pid(3))
+reset_pid_button3.grid(row=5, column=3, columnspan=1, pady=5, sticky="EW")
   
 # Filters (Fourth order)  
 filtro_entries = []  
@@ -411,7 +439,7 @@ frame_filtri.grid(row=0, column=0, padx=5, pady=5, sticky="NSEW")
 frame_filtri.columnconfigure(0, weight=1) 
 filters_type = ['Anti-aliasing', 'Filter']
 for filtro_idx, type in zip(range(2), filters_type):  
-    subframe = ttk.LabelFrame(frame_filtri, text=(type if type == 'Anti-aliasing' else 'Filter '))  
+    subframe = ttk.LabelFrame(frame_filtri, text=(type if type == 'Anti-aliasing' else 'Loop filters'))  
     subframe.grid(row=filtro_idx, column=0, padx=2, pady=2, sticky='NSEW')
     subframe.columnconfigure(0, weight=0)  
     for j in range(1, 6):  # 5 colonne per i valori numerici
@@ -426,6 +454,7 @@ for filtro_idx, type in zip(range(2), filters_type):
         e = ttk.Entry(subframe, width=4) 
         e.insert(0, first_stage_init_values[i] if type == 'Anti-aliasing' else "0") 
         e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")  # .
+        e.state(['readonly']) 
         first_stage_entries.append(e)  
     # Second stage  
     ttk.Label(subframe, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)  
@@ -434,6 +463,7 @@ for filtro_idx, type in zip(range(2), filters_type):
         e = ttk.Entry(subframe, width=4)  
         e.insert(0, second_stage_init_entries[i] if type == 'Anti-aliasing' else "0")
         e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")  # .
+        e.state(['readonly']) 
         second_stage_entries.append(e)  
     filtro_entries.append((first_stage_entries, second_stage_entries))  
     
@@ -557,12 +587,17 @@ sw2_toggle_button = tk.Button(
     bg='lightgreen'    
 )
 sw2_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
-
-# Checkbox sw2
-for i in range(3):  
-    cb = ttk.Checkbutton(frame_sw2, text='sw2_' + str(i+1), variable=sw2_vars[i])  
-    cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW")
   
+# Checkbox sw2  
+for i in range(3):  
+    cb = ttk.Checkbutton(  
+        frame_sw2,   
+        text='sw2_' + str(i+1),   
+        variable=sw2_vars[i],  
+        command=lambda i=i: (sw2_vars[i].get(), send_system_data())
+    )    
+    cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW") 
+
 # Offset x_os  
 xos_entries = []  
 init_xos_values = ["0", "0", "0"]
@@ -578,23 +613,29 @@ for i in range(3):
   
 # Matrix D (pre-filled with 1)  
 d_entries = []  
-init_values_D = [
+'''init_values_D = [
     ["1", "0", "0", "0"],
     ["0", "1", "0", "0"],
     ["0", "0", "1", "0"]
+]'''
+init_values_D =[
+    ["1", "0", "0"],
+    ["0", "1", "0"],
+    ["0", "0", "1"],
+    ["0", "0", "0"]
 ]
 frame_d = ttk.LabelFrame(col_right, text='Matrix D')  
 frame_d.grid(row=3, column=0, padx=5, pady=5, sticky="NSEW")
 
 # Add column labels
-for j in range(4):
+for j in range(np.shape(init_values_D)[1]):
     frame_d.columnconfigure(j+1, weight=1)
-    ttk.Label(frame_d, text=f'PWM {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
+    ttk.Label(frame_d, text=f'DOF {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
 
 # Add row labels and entries
 for i in range(np.shape(init_values_D)[0]):  
     row_entries = []  
-    ttk.Label(frame_d, text=f'DOF {i+1}').grid(row=i+1, column=0, padx=2, pady=2, sticky="EW")
+    ttk.Label(frame_d, text=f'PWM {i+1}').grid(row=i+1, column=0, padx=2, pady=2, sticky="EW")
     for j in range(np.shape(init_values_D)[1]):  
         e = ttk.Entry(frame_d, width=5)  
         e.insert(0, init_values_D[i][j])  
