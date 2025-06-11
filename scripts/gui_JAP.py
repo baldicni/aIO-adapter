@@ -115,7 +115,12 @@ def build_frame_data():
         # print("Offset: ", x_os)
 
         # D Matrix: 3x4 = 12 float
-        D = [np.float32(d_entries[i][j].get()) for i in range(4) for j in range(3)]
+        #D = [np.float32(d_entries[i][j].get()) for i in range(4) for j in range(3)]
+        D = [np.float32(d_entries[i][j].get()) for j in range(3) for i in range(4)]
+        for dof in range(3):
+            row = D[dof*4 : (dof+1)*4]
+            print(f"DOF {dof+1}: {row}")
+
         # print("Matrix D: ", D)
 
         # Limits: 3x2 = 6 float
