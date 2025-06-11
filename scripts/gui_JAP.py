@@ -95,9 +95,17 @@ def build_frame_data():
         filtro_entries_filter_1 = filtro_entries[1]  # DOF1
         filtro_entries_filter_2 = filtro_entries[2]  # DOF2
         filtro_entries_filter_3 = filtro_entries[3]  # DOF3
-        filter_values_flat1 = [np.float32(e.get()) for stage in filtro_entries_filter_1 for e in stage]  # 10 valori
-        filter_values_flat2 = [np.float32(e.get()) for stage in filtro_entries_filter_2 for e in stage]  # 10 valori
-        filter_values_flat3 = [np.float32(e.get()) for stage in filtro_entries_filter_3 for e in stage]  # 10 valori
+        filter_values_flat1 = [np.float32(e.get()) for stage in filtro_entries_filter_1 for entry_list in stage for e in entry_list]
+        filter_values_flat2 = [np.float32(e.get()) for stage in filtro_entries_filter_2 for entry_list in stage for e in entry_list]
+        filter_values_flat3 = [np.float32(e.get()) for stage in filtro_entries_filter_3 for entry_list in stage for e in entry_list]
+
+        def print_filter_coeffs(filter_num, values):
+            print(f"First stage coefficients filter{filter_num}: {values[:5]}")
+            print(f"Second stage coefficients filter{filter_num}: {values[5:]}")
+
+        print_filter_coeffs(1, filter_values_flat1)
+        print_filter_coeffs(2, filter_values_flat2)
+        print_filter_coeffs(3, filter_values_flat3)
         # print("Filter values: ", filter_values_flat1)
         # print("Filter values: ", filter_values_flat2)
         # print("Filter values: ", filter_values_flat3)
@@ -107,7 +115,7 @@ def build_frame_data():
         # print("Offset: ", x_os)
 
         # D Matrix: 3x4 = 12 float
-        D = [np.float32(d_entries[i][j].get()) for i in range(3) for j in range(4)]
+        D = [np.float32(d_entries[i][j].get()) for i in range(4) for j in range(3)]
         # print("Matrix D: ", D)
 
         # Limits: 3x2 = 6 float
@@ -119,7 +127,7 @@ def build_frame_data():
         ctrl = [np.uint8(0), np.uint8(0), np.uint8(0), np.uint8(0XA1)]  # Placeholder for control vector, can be modified later
 
         #frame_format = '<12f4B3f3f3f3f10f10f10f4B3f12f4B'
-        # Dynamically build frame_format based on DOF and NUM_OF_ADC
+        # Dynamically build me_format based on DOF and NUM_OF_ADC
         DOF = 3
         NUM_OF_ADC = 4
         # S Matrix: NUM_OF_ADC * DOF floats
@@ -482,7 +490,7 @@ for filtro_idx, type in zip(range(1,4), filters_type):
     second_stage_init_entries = ["1.0", "2.000000036385403", "0.9999999944467821", "1.3209134308194246", "-0.632738792885275"]
     for i in range(5):  
         e = ttk.Entry(subframe, width=4) 
-        e.insert(0, first_stage_init_values[i] if type == 'Anti-aliasing' else "0") 
+        e.insert(0,"0.") 
         e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")  # .
         e.state(['readonly']) 
         first_stage_entries.append(e)  
@@ -491,11 +499,11 @@ for filtro_idx, type in zip(range(1,4), filters_type):
     second_stage_entries = []  
     for i in range(5):  
         e = ttk.Entry(subframe, width=4)  
-        e.insert(0, second_stage_init_entries[i] if type == 'Anti-aliasing' else "0")
+        e.insert(0,"0.")
         e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")  # .
         e.state(['readonly']) 
         second_stage_entries.append(e)  
-    filtro_entries.append((first_stage_entries, second_stage_entries))  
+    filtro_entries[filtro_idx].append((first_stage_entries, second_stage_entries))  
     
     if type.startswith('Filter DOF'):
         dof_index = int(type[-1])
