@@ -1,4 +1,4 @@
-	Frequency [Hz]	Amplitude [mm]	Phase Angle [°]	
+cnt	Frequency_[Hz]	Amplitude_[mm]	Phase_Angle_[°]	
 1	1.e-003	1.	-1.5489e-010	
 2	50.13	1.4763	-0.51791	
 3	57.921	1.7342	-0.78432	
