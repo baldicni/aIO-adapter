@@ -188,8 +188,6 @@ class gui_JAP:
                 row_entries.append(e)  
             self.pid_entries.append(row_entries)  
 
-
-
         # Reset PID button
         reset_pid_button = ttk.Button(frame_pid, text="Reset all PIDs", command= lambda: self.reset_pid(4))
         reset_pid_button.grid(row=6, column=1, columnspan=3, pady=5, sticky="EW")
@@ -271,28 +269,34 @@ class gui_JAP:
                 e.state(['readonly']) 
                 second_stage_entries.append(e)  
             self.filtro_entries[filtro_idx].append((first_stage_entries, second_stage_entries))  
-            
+
             if type.startswith('Filter DOF'):
                 dof_index = int(type[-1])
                 
-                #sssssssssssssssssssssssssssssssssssssssssssss
-                
                 # Crea un'istanza per questo DOF
-                self.dof_filter = DOF_Filter(dof_index, (first_stage_entries, second_stage_entries))
+                dof_filter = DOF_Filter(dof_index, (first_stage_entries, second_stage_entries))
                 
                 # Frame for radio buttons and reset button
                 cb_frame = ttk.Frame(subframe)
                 cb_frame.grid(row=2, column=0, columnspan=6, sticky='w', pady=(5,0))
                 
                 # Radio buttons for selecting the mode for filter design
-                ttk.Radiobutton(cb_frame, text='Manual', variable=self.dof_filter.mode_var, 
-                            value='manual', command=self.call_dof_filter_update_mode).grid(row=0, column=0, padx=5)
-                ttk.Radiobutton(cb_frame, text='Script', variable=self.dof_filter.mode_var, 
-                            value='script', command=self.call_dof_filter_update_mode).grid(row=0, column=1, padx=5)
+                ttk.Radiobutton(
+                    cb_frame, text='Manual', variable=dof_filter.mode_var, 
+                    value='manual', 
+                    command=lambda df=dof_filter: df.update_mode(root=self.root)
+                ).grid(row=0, column=0, padx=5)
+                ttk.Radiobutton(
+                    cb_frame, text='Script', variable=dof_filter.mode_var, 
+                    value='script', 
+                    command=lambda df=dof_filter: df.update_mode(root=self.root)
+                ).grid(row=0, column=1, padx=5)
                 
                 # Reset button
-                reset_filter_button = ttk.Button(cb_frame, text=f"Reset Filter DOF{self.dof_filter.index}", 
-                                            command=self.call_reset_filter)
+                reset_filter_button = ttk.Button(
+                    cb_frame, text=f"Reset Filter DOF{dof_filter.index}", 
+                    command=lambda df=dof_filter: self.call_reset_filter_for(df)
+                )
                 reset_filter_button.grid(row=0, column=2, padx=5, pady=5, sticky="W")
 
         
@@ -616,14 +620,11 @@ class gui_JAP:
 
         self.send_system_data()  # Send the updated state of sw2 to the STM32
 
-    def call_reset_filter(self):
-        reset_bytes = self.dof_filter.reset_filter()
+    def call_reset_filter_for(self, df):
+        reset_bytes = df.reset_filter()
 
         frame_data = self.build_system_frame_data(reset_bytes)
         self.send_data(frame_data)
-
-    def call_dof_filter_update_mode(self):
-        self.dof_filter.update_mode(root=self.root)
 
 # Crea una classe per gestire ogni DOF separatamente
 class DOF_Filter(gui_JAP):
