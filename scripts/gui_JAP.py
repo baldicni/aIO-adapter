@@ -275,104 +275,7 @@ class gui_JAP:
             if type.startswith('Filter DOF'):
                 dof_index = int(type[-1])
                 
-                # Crea una classe per gestire ogni DOF separatamente
-                class DOF_Filter(gui_JAP):
-                    def __init__(self, index, entries):
-                        self.index = index
-                        self.entries = entries
-                        self.mode_var = tk.StringVar(value='manual')
-                        self.script_params = {
-                            'fs': '1000',
-                            'f0': '100',
-                            'order': '4',
-                            'type': 'lowpass',
-                            'Q': ''
-                        }
-                    
-                    def open_script_window(self, root):
-                        win = tk.Toplevel(root)
-                        win.title(f"Filter Design Parameters - DOF {self.index}")
-
-                        fs_var = tk.StringVar(value=self.script_params['fs'])
-                        f0_var = tk.StringVar(value=self.script_params['f0'])
-                        order_var = tk.StringVar(value=self.script_params['order'])
-                        type_var = tk.StringVar(value=self.script_params['type'])
-                        Q_var = tk.StringVar(value=self.script_params['Q'])
-
-                        win.columnconfigure(0, weight=0)
-                        win.columnconfigure(1, weight=1)
-
-                        ttk.Label(win, text="Sampling frequency:").grid(row=0, column=0, sticky='w', padx=5, pady=3)
-                        ttk.Entry(win, textvariable=fs_var).grid(row=0, column=1, sticky="EW", padx=5, pady=3)
-
-                        ttk.Label(win, text="Cut-off frequency:").grid(row=1, column=0, sticky='w', padx=5, pady=3)
-                        ttk.Entry(win, textvariable=f0_var).grid(row=1, column=1, sticky="EW", padx=5, pady=3)
-
-                        ttk.Label(win, text="Filter order:").grid(row=2, column=0, sticky='w', padx=5, pady=3)
-                        ttk.Entry(win, textvariable=order_var).grid(row=2, column=1, sticky="EW", padx=5, pady=3)
-
-                        ttk.Label(win, text="Q factor (for notch filter):").grid(row=3, column=0, sticky='w', padx=5, pady=3)
-                        ttk.Entry(win, textvariable=Q_var).grid(row=3, column=1, sticky="EW", padx=5, pady=3)
-
-                        ttk.Label(win, text="Filter type:").grid(row=4, column=0, sticky='w', padx=5, pady=3)
-                        type_menu = ttk.Combobox(win, textvariable=type_var, values=['lowpass', 'highpass', 'notch'], state='readonly')
-                        type_menu.grid(row=4, column=1, sticky="EW", padx=5, pady=3)
-
-                        def compute_and_fill():
-                            try:
-                                fs = np.float32(fs_var.get())
-                                f0 = np.float32(f0_var.get())
-                                order = np.int8(order_var.get())
-                                ftype = type_var.get()
-                                Q_text = Q_var.get()
-                                Q = np.float32(Q_var.get()) if Q_text else None
-                                if ftype == 'notch' and Q is None:
-                                    self.update_status("Error: Q factor is required for notch filter.", self.status_var, self.status_label)
-                                    return
-                            
-                                # Salva i parametri
-                                self.script_params = {
-                                    'fs': fs_var.get(),
-                                    'f0': f0_var.get(),
-                                    'order': order_var.get(),
-                                    'type': type_var.get(),
-                                    'Q': Q_var.get()
-                                }
-
-                                coefs = filter_design(fs=fs, f0=f0, order=order, type=ftype, Q=Q)
-                                if ftype == 'notch':
-                                    coefs = np.concatenate((coefs, coefs))
-
-                                for e, val in zip(self.entries[0] + self.entries[1], coefs):
-                                    e.config(state='normal')
-                                    e.delete(0, tk.END)
-                                    e.insert(0, f"{val:.6g}")
-                                    e.config(state='disabled')
-                                win.destroy()
-                            except Exception as e:
-                                self.update_status(f"Error: Invalid parameters:\n{e}", self.status_var, self.status_label)
-
-                        ttk.Button(win, text="Compute", command=compute_and_fill).grid(row=5, column=0, columnspan=2, pady=10)
-                    
-                    def update_mode(self, root):
-                        if self.mode_var.get() == 'manual':
-                            for e in self.entries[0] + self.entries[1]:
-                                e.config(state='normal')
-                        elif self.mode_var.get() == 'script':
-                            self.open_script_window(root)
-                    
-                    def reset_filter(self):
-                        match self.index:
-                            case 1:
-                                reset_bytes = [np.uint8(0), np.uint8(0X10), np.uint8(0), np.uint8(0)]
-                            case 2:
-                                reset_bytes = [np.uint8(0), np.uint8(0X20), np.uint8(0), np.uint8(0)]
-                            case 3:
-                                reset_bytes = [np.uint8(0), np.uint8(0X40), np.uint8(0), np.uint8(0)]
-                        
-                        return reset_bytes
-                        #frame_data = self.build_system_frame_data(reset_bytes)
-                        #self.send_data(frame_data)
+                #sssssssssssssssssssssssssssssssssssssssssssss
                 
                 # Crea un'istanza per questo DOF
                 self.dof_filter = DOF_Filter(dof_index, (first_stage_entries, second_stage_entries))
@@ -721,6 +624,105 @@ class gui_JAP:
 
     def call_dof_filter_update_mode(self):
         self.dof_filter.update_mode(root=self.root)
+
+# Crea una classe per gestire ogni DOF separatamente
+class DOF_Filter(gui_JAP):
+    def __init__(self, index, entries):
+        self.index = index
+        self.entries = entries
+        self.mode_var = tk.StringVar(value='manual')
+        self.script_params = {
+            'fs': '1000',
+            'f0': '100',
+            'order': '4',
+            'type': 'lowpass',
+            'Q': ''
+        }
+    
+    def open_script_window(self, root):
+        win = tk.Toplevel(root)
+        win.title(f"Filter Design Parameters - DOF {self.index}")
+
+        fs_var = tk.StringVar(value=self.script_params['fs'])
+        f0_var = tk.StringVar(value=self.script_params['f0'])
+        order_var = tk.StringVar(value=self.script_params['order'])
+        type_var = tk.StringVar(value=self.script_params['type'])
+        Q_var = tk.StringVar(value=self.script_params['Q'])
+
+        win.columnconfigure(0, weight=0)
+        win.columnconfigure(1, weight=1)
+
+        ttk.Label(win, text="Sampling frequency:").grid(row=0, column=0, sticky='w', padx=5, pady=3)
+        ttk.Entry(win, textvariable=fs_var).grid(row=0, column=1, sticky="EW", padx=5, pady=3)
+
+        ttk.Label(win, text="Cut-off frequency:").grid(row=1, column=0, sticky='w', padx=5, pady=3)
+        ttk.Entry(win, textvariable=f0_var).grid(row=1, column=1, sticky="EW", padx=5, pady=3)
+
+        ttk.Label(win, text="Filter order:").grid(row=2, column=0, sticky='w', padx=5, pady=3)
+        ttk.Entry(win, textvariable=order_var).grid(row=2, column=1, sticky="EW", padx=5, pady=3)
+
+        ttk.Label(win, text="Q factor (for notch filter):").grid(row=3, column=0, sticky='w', padx=5, pady=3)
+        ttk.Entry(win, textvariable=Q_var).grid(row=3, column=1, sticky="EW", padx=5, pady=3)
+
+        ttk.Label(win, text="Filter type:").grid(row=4, column=0, sticky='w', padx=5, pady=3)
+        type_menu = ttk.Combobox(win, textvariable=type_var, values=['lowpass', 'highpass', 'notch'], state='readonly')
+        type_menu.grid(row=4, column=1, sticky="EW", padx=5, pady=3)
+
+        def compute_and_fill():
+            try:
+                fs = np.float32(fs_var.get())
+                f0 = np.float32(f0_var.get())
+                order = np.int8(order_var.get())
+                ftype = type_var.get()
+                Q_text = Q_var.get()
+                Q = np.float32(Q_var.get()) if Q_text else None
+                if ftype == 'notch' and Q is None:
+                    self.update_status("Error: Q factor is required for notch filter.", self.status_var, self.status_label)
+                    return
+            
+                # Salva i parametri
+                self.script_params = {
+                    'fs': fs_var.get(),
+                    'f0': f0_var.get(),
+                    'order': order_var.get(),
+                    'type': type_var.get(),
+                    'Q': Q_var.get()
+                }
+
+                coefs = filter_design(fs=fs, f0=f0, order=order, type=ftype, Q=Q)
+                if ftype == 'notch':
+                    coefs = np.concatenate((coefs, coefs))
+
+                for e, val in zip(self.entries[0] + self.entries[1], coefs):
+                    e.config(state='normal')
+                    e.delete(0, tk.END)
+                    e.insert(0, f"{val:.6g}")
+                    e.config(state='disabled')
+                win.destroy()
+            except Exception as e:
+                self.update_status(f"Error: Invalid parameters:\n{e}", self.status_var, self.status_label)
+
+        ttk.Button(win, text="Compute", command=compute_and_fill).grid(row=5, column=0, columnspan=2, pady=10)
+    
+    def update_mode(self, root):
+        if self.mode_var.get() == 'manual':
+            for e in self.entries[0] + self.entries[1]:
+                e.config(state='normal')
+        elif self.mode_var.get() == 'script':
+            self.open_script_window(root)
+    
+    def reset_filter(self):
+        match self.index:
+            case 1:
+                reset_bytes = [np.uint8(0), np.uint8(0X10), np.uint8(0), np.uint8(0)]
+            case 2:
+                reset_bytes = [np.uint8(0), np.uint8(0X20), np.uint8(0), np.uint8(0)]
+            case 3:
+                reset_bytes = [np.uint8(0), np.uint8(0X40), np.uint8(0), np.uint8(0)]
+        
+        return reset_bytes
+        #frame_data = self.build_system_frame_data(reset_bytes)
+        #self.send_data(frame_data)
 
 if __name__ == "__main__":
     gui_JAP()
