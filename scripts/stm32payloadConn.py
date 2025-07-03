@@ -78,6 +78,28 @@ class STM32PayloadConn:
         print("Frame data length: ", len(frame_data))
         return frame_data
     
+    #SIGNAL SEND FRAME
+    
+    def create_sinusoidal_frame(self, amplitudes, frequencies, enables):
+        frame = bytearray(304)  # Same size as other frames
+        
+        # Pack amplitudes (3x float32)
+        for i, amp in enumerate(amplitudes):
+            frame[i*4:(i+1)*4] = struct.pack('f', amp)
+        
+        # Pack frequencies (3x float32)
+        for i, freq in enumerate(frequencies):
+            frame[12 + i*4:12 + (i+1)*4] = struct.pack('f', freq)
+        
+        # Pack enables (3x uint8)
+        for i, en in enumerate(enables):
+            frame[24 + i] = en
+        
+        # Set frame type (0xA5)
+        frame[-1] = 0xA5
+        
+        return frame
+ 
     def send(self, frame_data):
         if self.port is not None:
             if frame_data is not None:
@@ -91,5 +113,6 @@ class STM32PayloadConn:
                     return True
                 
         return False
-        
+
+
         

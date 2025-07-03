@@ -4,13 +4,13 @@ from tkinter import messagebox
 import os
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
+import serial.tools.list_ports
 
 import stm32payloadConn
 
 ''' 
 SCRIPT FILTER DESIGN
 BEGIN
-
 '''
 
 def filter_design(f0, fs=1000, Q=None, order=4, type=None):
@@ -36,17 +36,18 @@ def filter_design(f0, fs=1000, Q=None, order=4, type=None):
 END
  '''
   
-def find_uart_port():  
-    available_ports = [port for port in os.listdir('/dev') if port.startswith('ttyUSB') or port.startswith('ttyACM') or port.startswith('tty.usbmodem')]  
-    if available_ports:  
-        return '/dev/' + available_ports[0]  
-    else:  
+def find_uart_port():
+    ports = serial.tools.list_ports.comports()
+    available_ports = [port.device for port in ports]
+    if available_ports:
+        return available_ports[0] # Return the first found port
+    else:
         return None  
 
 class gui_JAP:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.minsize(1100, 900)
+        self.root.minsize(1200, 400)
         self.root.after(0, self.lift_window)
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
@@ -66,6 +67,8 @@ class gui_JAP:
         main_frame.rowconfigure(0, weight=1)
         main_frame.rowconfigure(1, weight=0)
         main_frame.rowconfigure(2, weight=0)
+
+       
         
         # Left and Right columns  
         col_left = ttk.Frame(main_frame)  
@@ -251,11 +254,11 @@ class gui_JAP:
             # First stage 
             ttk.Label(subframe, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)  
             first_stage_entries = []
-            first_stage_init_values = ["0.004824343357716229", "0.009648686539896796", "0.004824343384506867", "1.048599576362613", "-0.2961403575616704"]
-            second_stage_init_entries = ["1.0", "2.000000036385403", "0.9999999944467821", "1.3209134308194246", "-0.632738792885275"]
+            first_stage_init_values = ["0.167179", "0.334359", "0.167179", "-0.328976", "-0.0645877"]
+            second_stage_init_entries = ["1.0", "2.0", "1.0", "-0.45312", "-0.466326"]
             for i in range(5):  
                 e = ttk.Entry(subframe, width=4) 
-                e.insert(0,"0.") 
+                e.insert(0,first_stage_init_values[i]) 
                 e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")  # .
                 e.state(['readonly']) 
                 first_stage_entries.append(e)  
@@ -264,7 +267,7 @@ class gui_JAP:
             second_stage_entries = []  
             for i in range(5):  
                 e = ttk.Entry(subframe, width=4)  
-                e.insert(0,"0.")
+                e.insert(0,second_stage_init_entries[i])
                 e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")  # .
                 e.state(['readonly']) 
                 second_stage_entries.append(e)  
@@ -379,12 +382,19 @@ class gui_JAP:
         self.status_label = tk.Label(main_frame, textvariable=self.status_var, bg='black', fg='white', relief='sunken', anchor='w', width=50)  
         self.status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")  
         
-        # Send button  
-        send_button = ttk.Button(main_frame, text='Config loops', command=self.send_config_data)
-        send_button.grid(row=1, column=0, columnspan=1, pady=15)
+        # Frame per contenere entrambi i bottoni
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=1, column=0, columnspan=2, pady=15, sticky="W")
+
+        send_button = ttk.Button(button_frame, text='Config loops', command=self.send_config_data, width = 25)
+        send_button.pack(side="left", padx=(0, 10))
+
+        self.send_signal_btn = ttk.Button(button_frame, text="Send Signal", command=self.open_signal_window, style='Accent.TButton', width = 25)
+        self.send_signal_btn.pack(side="left")
+
 
         # IP Address field
-        self.ip_addr_var = tk.StringVar(value="192.168.33.34")
+        self.ip_addr_var = tk.StringVar(value="192.168.11.15")
         frame_ip = ttk.LabelFrame(main_frame, text='Destination IP Address')
         frame_ip.grid(row=1, column=1, padx=6, pady=3, sticky="NSEW")
         frame_ip.columnconfigure(0, weight=1)
@@ -625,6 +635,74 @@ class gui_JAP:
 
         frame_data = self.build_system_frame_data(reset_bytes)
         self.send_data(frame_data)
+    
+    #SIGNAL SEND
+    def open_signal_window(self):
+        win = tk.Toplevel(self.root)
+        win.title("Sinusoidal Signal Config")
+        win.geometry("400x250")
+
+        # DOF Selection
+        ttk.Label(win, text="DOF:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.dof_var = tk.IntVar(value=1)
+        for i in range(3):
+            ttk.Radiobutton(win, text=f"DOF {i+1}", variable=self.dof_var, value=i+1).grid(row=0, column=i+1)
+
+        # Amplitude
+        ttk.Label(win, text="Amplitude (-1.0 to 1.0):").grid(row=1, column=0, sticky="w")
+        self.amp_entry = ttk.Entry(win)
+        self.amp_entry.insert(0, "0.5")
+        self.amp_entry.grid(row=1, column=1, columnspan=3, sticky="ew")
+
+        # Frequency
+        ttk.Label(win, text="Frequency (Hz):").grid(row=2, column=0, sticky="w")
+        self.freq_entry = ttk.Entry(win)
+        self.freq_entry.insert(0, "1.0")
+        self.freq_entry.grid(row=2, column=1, columnspan=3, sticky="ew")
+
+        # Enable Checkbox
+        self.enable_var = tk.IntVar(value=1)
+        ttk.Checkbutton(win, text="Enable Signal", variable=self.enable_var).grid(row=3, column=0, columnspan=4)
+
+        # Send Button
+        ttk.Button(win, text="Send", command=lambda: self.send_sinusoidal_from_window(win)).grid(row=4, column=1, pady=10)
+    
+
+    def send_sinusoidal_from_window(self, window):
+        try:
+            dof = self.dof_var.get() - 1  # Convert to 0-based index
+            amp = float(self.amp_entry.get())
+            freq = float(self.freq_entry.get())
+            enable = self.enable_var.get()
+
+            # Validate inputs
+            if not -1.0 <= amp <= 1.0:
+                raise ValueError("Amplitude must be between -1.0 and 1.0")
+            if not 0.1 <= freq <= 100.0:
+                raise ValueError("Frequency must be between 0.1 and 100.0 Hz")
+
+            # Prepare arrays (default: disabled, amplitude=0)
+            amplitudes = [0.0, 0.0, 0.0]
+            frequencies = [1.0, 1.0, 1.0]
+            enables = [0, 0, 0]
+
+            # Set selected DOF
+            amplitudes[dof] = amp
+            frequencies[dof] = freq
+            enables[dof] = enable
+
+            # Send via STM32
+            frame = self.stm32.create_sinusoidal_frame(amplitudes, frequencies, enables)
+            self.send_data(frame)
+            
+            window.destroy()
+            self.update_status(f"Sent: DOF{dof+1} | Amp: {amp} | Freq: {freq}Hz | {'ON' if enable else 'OFF'}",
+                            self.status_var, self.status_label)
+
+        except ValueError as e:
+            messagebox.showerror("Error", str(e))
+
+
 
 # Crea una classe per gestire ogni DOF separatamente
 class DOF_Filter(gui_JAP):
