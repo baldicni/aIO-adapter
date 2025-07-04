@@ -1,13 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-import os
+import os, sys
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
-import serial.tools.list_ports
 from itertools import repeat
 
+if sys.platform.startswith('win'):
+    import serial.tools.list_ports
+
 import stm32payloadConn
+import sys
 
 ''' 
 SCRIPT FILTER DESIGN
@@ -38,12 +41,19 @@ END
  '''
   
 def find_uart_port():
-    ports = serial.tools.list_ports.comports()
-    available_ports = [port.device for port in ports]
-    if available_ports:
-        return available_ports[0] # Return the first found port
+    if sys.platform.startswith('win'):
+        ports = serial.tools.list_ports.comports()
+        available_ports = [port.device for port in ports]
+        if available_ports:
+            return available_ports[0] # Return the first found port
+        else:
+            return None
     else:
-        return None  
+        available_ports = [port for port in os.listdir('/dev') if port.startswith('ttyUSB') or port.startswith('ttyACM') or port.startswith('tty.usbmodem')]  
+        if available_ports:  
+            return '/dev/' + available_ports[0]  
+        else:  
+            return None
 
 class gui_JAP:
     def __init__(self, DOF=3):

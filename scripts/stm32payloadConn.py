@@ -2,27 +2,23 @@ import serial
 import struct
 import numpy as np
 
-'''
-Old functions
-
-def find_uart_port():  
-    available_ports = [port for port in os.listdir('/dev') if port.startswith('ttyUSB') or port.startswith('ttyACM') or port.startswith('tty.usbmodem')]  
-    if available_ports:  
-        return '/dev/' + available_ports[0]  
-    else:  
-        return None 
-
-
-'''
-
 class STM32PayloadConn:
+    """
+    STM32PayloadConn module provides a class for constructing and sending binary data frames
+    to an STM32 microcontroller over a serial connection. The frames are used for system control,
+    configuration, and communication with the STM32 device.
+    
+    Typical usage involves creating an STM32PayloadConn instance, building a frame with
+    the appropriate method, and sending it to the STM32 device.
+    """
+
     def __init__(self, port='/dev/ttyUSB0', baudrate=115200, frame_size=304):
         self.port = port
         self.baudrate = baudrate
         self.serial_conn = None
         self.frame_size = frame_size  # Size of the frame in bytes, can be adjusted based on the actual frame structure
 
-    def create_sys_frame(self, dest_ip_addr, sw1, sw2, reset_bytes, sig_ampl=[0,0,0], sig_freq=[1,1,1], sig_en=[0,0,0]):
+    def create_sys_frame(self, dest_ip_addr, sw1, sw2, reset_bytes, sig_ampl=[0,0,0], sig_freq=[1,1,1], sig_en=[0,0,0,0]):
         future_bytes = 256
 
         frame_format = f'<4B4B4B4B3f3f4B{future_bytes}B4B'
