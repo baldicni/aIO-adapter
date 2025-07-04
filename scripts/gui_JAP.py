@@ -5,6 +5,7 @@ import os
 import numpy as np
 from scipy.signal import sos2zpk, iirfilter, tf2sos, iirnotch
 import serial.tools.list_ports
+from itertools import repeat
 
 import stm32payloadConn
 
@@ -45,7 +46,7 @@ def find_uart_port():
         return None  
 
 class gui_JAP:
-    def __init__(self):
+    def __init__(self, DOF=3):
         self.root = tk.Tk()
         self.root.minsize(1200, 400)
         self.root.after(0, self.lift_window)
@@ -68,7 +69,7 @@ class gui_JAP:
         main_frame.rowconfigure(1, weight=0)
         main_frame.rowconfigure(2, weight=0)
 
-       
+        self.DOF = DOF
         
         # Left and Right columns  
         col_left = ttk.Frame(main_frame)  
@@ -109,7 +110,7 @@ class gui_JAP:
         frame_s.grid(row=1, column=0, padx=6, pady=3, sticky="NSEW")
 
         # Add column labels
-        for j in range(3):
+        for j in range(self.DOF):
             frame_s.columnconfigure(j+1, weight=1)
             ttk.Label(frame_s, text=f'DOF {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
 
@@ -125,7 +126,7 @@ class gui_JAP:
             self.s_entries.append(row_entries)  
         
         # Switch sw1  
-        self.sw1_vars = [tk.IntVar(value=1) for _ in range(3)]  
+        self.sw1_vars = [tk.IntVar(value=1) for _ in range(self.DOF)]  
         frame_sw1 = ttk.LabelFrame(col_left, text='Switch sw1')  
         frame_sw1.grid(row=2, column=0, padx=6, pady=3, sticky="NSEW")
         for j in range(4):  # Aumentato a 4 per il bottone di toggle
@@ -143,7 +144,7 @@ class gui_JAP:
         self.sw1_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
 
         # Checkbox sw1  
-        for i in range(3):  
+        for i in range(self.DOF):  
             cb = ttk.Checkbutton(  
                 frame_sw1,   
                 text='sw1_' + str(i+1),   
@@ -322,7 +323,7 @@ class gui_JAP:
         self.sw2_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
         
         # Checkbox sw2  
-        for i in range(3):  
+        for i in range(self.DOF):
             cb = ttk.Checkbutton(  
                 frame_sw2,   
                 text='sw2_' + str(i+1),   
@@ -376,6 +377,11 @@ class gui_JAP:
                 row_entries.append(e)  
             self.d_entries.append(row_entries)  
 
+        # Signal injection
+        # Storage for signal parameters
+        self.signal_ampl = list(repeat(0., DOF))
+        self.signal_freq = list(repeat(1., DOF))
+        self.signal_en = list(repeat(False, 4))
 
         # Status box (white text)  
         self.status_var = tk.StringVar()  
@@ -442,18 +448,18 @@ class gui_JAP:
 
         '''
         # S Matrix 4x3 = 12 float
-        S = [np.float32(self.s_entries[i][j].get()) for i in range(4) for j in range(3)]
+        S = [np.float32(self.s_entries[i][j].get()) for i in range(4) for j in range(self.DOF)]
         # print("Sensing Matrix: ", S)
 
         # Setpoint x_sp: 3 float
-        x_sp = [np.float32(self.xsp_entries[i].get()) for i in range(3)]
+        x_sp = [np.float32(self.xsp_entries[i].get()) for i in range(self.DOF)]
         # print("Setpoint: ", x_sp)
 
         # PID: 3 float per DOF (Kp, Ki, Kd)
         PID1_values = []
         PID2_values = []
         PID3_values = []
-        for dof in range(3):
+        for dof in range(self.DOF):
             Kp = np.float32(self.pid_entries[dof][0].get())
             Ki = np.float32(self.pid_entries[dof][1].get())
             Kd = np.float32(self.pid_entries[dof][2].get())
@@ -493,13 +499,13 @@ class gui_JAP:
         # print("Filter values: ", filter_values_flat3)
 
         # Offset x_os: 3 float
-        x_os = [np.float32(self.xos_entries[i].get()) for i in range(3)]
+        x_os = [np.float32(self.xos_entries[i].get()) for i in range(self.DOF)]
         # print("Offset: ", x_os)
 
         # D Matrix: 3x4 = 12 float
         #D = [np.float32(d_entries[i][j].get()) for i in range(4) for j in range(3)]
-        D = [np.float32(self.d_entries[i][j].get()) for j in range(3) for i in range(4)]
-        for dof in range(3):
+        D = [np.float32(self.d_entries[i][j].get()) for j in range(self.DOF) for i in range(4)]
+        for dof in range(self.DOF):
             row = D[dof*4 : (dof+1)*4]
             print(f"DOF {dof+1}: {row}")
 
@@ -542,12 +548,12 @@ class gui_JAP:
         dest_ip_addr = [np.uint8(b) for b in ip_bytes]
 
         # Switch 1: 3 byte
-        sw1 = [np.uint8(self.sw1_vars[i].get()) for i in range(3)]
+        sw1 = [np.uint8(self.sw1_vars[i].get()) for i in range(self.DOF)]
         sw1.append(np.uint8(0))  # Add a zero to the end of the list
         # print("Switch 1: ", sw1)
 
         # Switch 2: 3 byte
-        sw2 = [np.uint8(self.sw2_vars[i].get()) for i in range(3)]
+        sw2 = [np.uint8(self.sw2_vars[i].get()) for i in range(self.DOF)]
         sw2.append(np.uint8(0))  # Add a zero to the end of the list
         # print("Switch 2: ", sw2)
 
@@ -555,7 +561,10 @@ class gui_JAP:
             dest_ip_addr=dest_ip_addr,
             sw1=sw1,
             sw2=sw2,
-            reset_bytes=reset_bytes
+            reset_bytes=reset_bytes,
+            sig_ampl = np.float32(self.signal_ampl),
+            sig_freq = self.signal_freq,
+            sig_en = np.uint8(self.signal_en)
         )
         return cfg_frame
 
@@ -602,7 +611,7 @@ class gui_JAP:
         self.sw1_toggle_var.set(new_state)
         
         # Set same values for sw1
-        for i in range(3):
+        for i in range(self.DOF):
             self.sw1_vars[i].set(new_state)
         
         
@@ -619,7 +628,7 @@ class gui_JAP:
         self.sw2_toggle_var.set(new_state)
         
         
-        for i in range(3):
+        for i in range(self.DOF):
             self.sw2_vars[i].set(new_state)
         
         
@@ -636,7 +645,6 @@ class gui_JAP:
         frame_data = self.build_system_frame_data(reset_bytes)
         self.send_data(frame_data)
     
-    #SIGNAL SEND
     def open_signal_window(self):
         win = tk.Toplevel(self.root)
         win.title("Sinusoidal Signal Config")
@@ -644,25 +652,33 @@ class gui_JAP:
 
         # DOF Selection
         ttk.Label(win, text="DOF:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.dof_var = tk.IntVar(value=1)
-        for i in range(3):
-            ttk.Radiobutton(win, text=f"DOF {i+1}", variable=self.dof_var, value=i+1).grid(row=0, column=i+1)
+        self.dof_var = tk.IntVar(value=0)
+        for i in range(self.DOF):
+            ttk.Radiobutton(win, text=f"DOF {i+1}", variable=self.dof_var, value=i, command=lambda: rad(self, self.dof_var.get())).grid(row=0, column=i+1)
 
         # Amplitude
         ttk.Label(win, text="Amplitude (-1.0 to 1.0):").grid(row=1, column=0, sticky="w")
         self.amp_entry = ttk.Entry(win)
-        self.amp_entry.insert(0, "0.5")
+        self.amp_entry.insert(0, self.signal_ampl[self.dof_var.get()])
         self.amp_entry.grid(row=1, column=1, columnspan=3, sticky="ew")
 
         # Frequency
         ttk.Label(win, text="Frequency (Hz):").grid(row=2, column=0, sticky="w")
         self.freq_entry = ttk.Entry(win)
-        self.freq_entry.insert(0, "1.0")
+        self.freq_entry.insert(0, self.signal_freq[self.dof_var.get()])
         self.freq_entry.grid(row=2, column=1, columnspan=3, sticky="ew")
 
+        def rad(self, dof_var):
+            self.amp_entry.delete(0, tk.END)
+            self.amp_entry.insert(0, self.signal_ampl[dof_var])
+            self.freq_entry.delete(0, tk.END)
+            self.freq_entry.insert(0, self.signal_freq[dof_var])
+            self.enable_var.set(self.signal_en[dof_var])  # Update enable checkbox based on selected DOF
+
         # Enable Checkbox
-        self.enable_var = tk.IntVar(value=1)
+        self.enable_var = tk.IntVar()
         ttk.Checkbutton(win, text="Enable Signal", variable=self.enable_var).grid(row=3, column=0, columnspan=4)
+        self.enable_var.set(self.signal_en[self.dof_var.get()])  # Update enable checkbox based on selected DOF
 
         # Send Button
         ttk.Button(win, text="Send", command=lambda: self.send_sinusoidal_from_window(win)).grid(row=4, column=1, pady=10)
@@ -670,7 +686,7 @@ class gui_JAP:
 
     def send_sinusoidal_from_window(self, window):
         try:
-            dof = self.dof_var.get() - 1  # Convert to 0-based index
+            dof = self.dof_var.get()  # Convert to 0-based index
             amp = float(self.amp_entry.get())
             freq = float(self.freq_entry.get())
             enable = self.enable_var.get()
@@ -680,19 +696,16 @@ class gui_JAP:
                 raise ValueError("Amplitude must be between -1.0 and 1.0")
             if not 0.1 <= freq <= 100.0:
                 raise ValueError("Frequency must be between 0.1 and 100.0 Hz")
-
-            # Prepare arrays (default: disabled, amplitude=0)
-            amplitudes = [0.0, 0.0, 0.0]
-            frequencies = [1.0, 1.0, 1.0]
-            enables = [0, 0, 0]
-
+ 
             # Set selected DOF
-            amplitudes[dof] = amp
-            frequencies[dof] = freq
-            enables[dof] = enable
+            self.signal_ampl[dof] = amp
+            self.signal_freq[dof] = freq
+            self.signal_en[dof] = enable
 
             # Send via STM32
-            frame = self.stm32.create_sinusoidal_frame(amplitudes, frequencies, enables)
+            #frame = self.stm32.create_sinusoidal_frame(amplitudes, frequencies, enables)
+            frame = self.build_system_frame_data(reset_bytes=None)
+            #frame = self.stm32.create_sys_frame(dest_ip_addr, sw1, sw2, reset_bytes, self.signal_ampl, self.signal_freq, self.signal_en)
             self.send_data(frame)
             
             window.destroy()
