@@ -12,13 +12,13 @@ if sys.platform.startswith('win'):
 import stm32payloadConn
 import sys
 
-''' 
+'''
 SCRIPT FILTER DESIGN
 BEGIN
 '''
 
 def filter_design(f0, fs=1000, Q=None, order=4, type=None):
-    
+
     if type == 'notch' and Q is not None:
         b, a = iirnotch(f0, Q, fs)
         order = 1
@@ -39,7 +39,7 @@ def filter_design(f0, fs=1000, Q=None, order=4, type=None):
 '''
 END
  '''
-  
+
 def find_uart_port():
     if sys.platform.startswith('win'):
         ports = serial.tools.list_ports.comports()
@@ -49,10 +49,10 @@ def find_uart_port():
         else:
             return None
     else:
-        available_ports = [port for port in os.listdir('/dev') if port.startswith('ttyUSB') or port.startswith('ttyACM') or port.startswith('tty.usbmodem')]  
-        if available_ports:  
-            return '/dev/' + available_ports[0]  
-        else:  
+        available_ports = [port for port in os.listdir('/dev') if port.startswith('ttyUSB') or port.startswith('ttyACM') or port.startswith('tty.usbmodem')]
+        if available_ports:
+            return '/dev/' + available_ports[0]
+        else:
             return None
 
 class gui_JAP:
@@ -70,9 +70,9 @@ class gui_JAP:
         small_icon = tk.PhotoImage(file=os.path.join(script_dir, "gui_JAP_24.png"))
         self.root.iconphoto(True, large_icon, small_icon)
 
-            
-        main_frame = ttk.Frame(self.root)  
-        main_frame.grid(row=0, column=0, padx=10, pady=10, sticky="NSEW") 
+
+        main_frame = ttk.Frame(self.root)
+        main_frame.grid(row=0, column=0, padx=10, pady=10, sticky="NSEW")
         main_frame.columnconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(0, weight=1)
@@ -80,18 +80,18 @@ class gui_JAP:
         main_frame.rowconfigure(2, weight=0)
 
         self.DOF = DOF
-        
-        # Left and Right columns  
-        col_left = ttk.Frame(main_frame)  
+
+        # Left and Right columns
+        col_left = ttk.Frame(main_frame)
         col_left.grid(row=0, column=0, sticky='NSEW')
-        col_left.columnconfigure(0, weight=1)  
-        for i in range(6): 
+        col_left.columnconfigure(0, weight=1)
+        for i in range(6):
             col_left.rowconfigure(i, weight=0)
 
-        col_right = ttk.Frame(main_frame)  
-        col_right.grid(row=0, column=1, sticky='NSEW', padx=20)  
-        col_right.columnconfigure(0, weight=1)  
-        for i in range(4):  
+        col_right = ttk.Frame(main_frame)
+        col_right.grid(row=0, column=1, sticky='NSEW', padx=20)
+        col_right.columnconfigure(0, weight=1)
+        for i in range(5):
             col_right.rowconfigure(i, weight=0)
 
         # Sampling frequency
@@ -99,24 +99,24 @@ class gui_JAP:
         init_fs_values = ["1000"]
         frame_fs = ttk.LabelFrame(col_left, text='Sampling frequency')
         frame_fs.grid(row=0, column=0, padx=6, pady=(6, 3), sticky="NSEW")
-        frame_fs.columnconfigure(0, weight=1)  
+        frame_fs.columnconfigure(0, weight=1)
 
-        for i in range(1):  
-            e = ttk.Entry(frame_fs, width=7, style='Flat.TEntry')  
-            e.insert(0, init_fs_values[i])  
-            e.state(['readonly']) 
-            e.grid(row=0, column=i, padx=5, pady=5, sticky="EW")  
-            fs_entries.append(e)  
+        for i in range(1):
+            e = ttk.Entry(frame_fs, width=7, style='Flat.TEntry')
+            e.insert(0, init_fs_values[i])
+            e.state(['readonly'])
+            e.grid(row=0, column=i, padx=5, pady=5, sticky="EW")
+            fs_entries.append(e)
 
         # Matrix S
-        self.s_entries = []  
+        self.s_entries = []
         init_values_S = [
             ["1", "0", "0"],
             ["0", "1", "0"],
             ["0", "0", "1"],
             ["0", "0", "0"]
         ]
-        frame_s = ttk.LabelFrame(col_left, text='Matrix S')  
+        frame_s = ttk.LabelFrame(col_left, text='Matrix S')
         frame_s.grid(row=1, column=0, padx=6, pady=3, sticky="NSEW")
 
         # Add column labels
@@ -125,82 +125,82 @@ class gui_JAP:
             ttk.Label(frame_s, text=f'DOF {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
 
         # Add row labels and entries
-        for i in range(4):  
-            row_entries = []  
+        for i in range(4):
+            row_entries = []
             ttk.Label(frame_s, text=f'ADC {i+1}').grid(row=i+1, column=0, padx=2, pady=2, sticky="EW")
-            for j in range(3):  
-                e = ttk.Entry(frame_s, width=5)  
-                e.insert(0, init_values_S[i][j])  
+            for j in range(3):
+                e = ttk.Entry(frame_s, width=5)
+                e.insert(0, init_values_S[i][j])
                 e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  # .
-                row_entries.append(e)  
-            self.s_entries.append(row_entries)  
-        
-        # Switch sw1  
-        self.sw1_vars = [tk.IntVar(value=1) for _ in range(self.DOF)]  
-        frame_sw1 = ttk.LabelFrame(col_left, text='Switch sw1')  
+                row_entries.append(e)
+            self.s_entries.append(row_entries)
+
+        # Switch sw1
+        self.sw1_vars = [tk.IntVar(value=1) for _ in range(self.DOF)]
+        frame_sw1 = ttk.LabelFrame(col_left, text='Switch sw1')
         frame_sw1.grid(row=2, column=0, padx=6, pady=3, sticky="NSEW")
         for j in range(4):  # Aumentato a 4 per il bottone di toggle
             frame_sw1.columnconfigure(j, weight=1)
 
         # Close loop 1
-        self.sw1_toggle_var = tk.IntVar(value=1)  
+        self.sw1_toggle_var = tk.IntVar(value=1)
         self.sw1_toggle_button = tk.Button(
-            frame_sw1, 
-            text="Close loop 1", 
+            frame_sw1,
+            text="Close loop 1",
             command=self.toggle_sw1_loop,
-            relief=tk.SUNKEN,  
-            bg='lightgreen'   
+            relief=tk.SUNKEN,
+            bg='lightgreen'
         )
         self.sw1_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
 
-        # Checkbox sw1  
-        for i in range(self.DOF):  
-            cb = ttk.Checkbutton(  
-                frame_sw1,   
-                text='sw1_' + str(i+1),   
-                variable=self.sw1_vars[i],  
-                command=lambda i=i: (self.sw1_vars[i].get(), self.send_system_data()) 
-            )    
-            cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW") 
-        
-        # Setpoint x_sp  
-        self.xsp_entries = [] 
-        init_xsp_values = ["0", "0", "0"] 
-        frame_xsp = ttk.LabelFrame(col_left, text='Setpoint x_sp')  
+        # Checkbox sw1
+        for i in range(self.DOF):
+            cb = ttk.Checkbutton(
+                frame_sw1,
+                text='sw1_' + str(i+1),
+                variable=self.sw1_vars[i],
+                command=lambda i=i: (self.sw1_vars[i].get(), self.send_system_data())
+            )
+            cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW")
+
+        # Setpoint x_sp
+        self.xsp_entries = []
+        init_xsp_values = ["0", "0", "0"]
+        frame_xsp = ttk.LabelFrame(col_left, text='Setpoint x_sp')
         frame_xsp.grid(row=3, column=0, padx=6, pady=3, sticky="NSEW")
         for j in range(3):
             frame_xsp.columnconfigure(j, weight=1)
-        for i in range(3):  
-            e = ttk.Entry(frame_xsp, width=7) 
-            e.insert(0, init_xsp_values[i]) 
+        for i in range(3):
+            e = ttk.Entry(frame_xsp, width=7)
+            e.insert(0, init_xsp_values[i])
             e.grid(row=0, column=i, padx=2, pady=5, sticky="EW")  # .
-            self.xsp_entries.append(e)  
-        
+            self.xsp_entries.append(e)
+
         # PID Matrix
-        self.pid_entries = []  
+        self.pid_entries = []
         init_pid_values = [
             ["0.1", "0.001", "0."],
             ["0.1", "0.001", "0."],
             ["0.1", "0.001", "0."]
         ]
-        frame_pid = ttk.LabelFrame(col_left, text='PID Matrix')  
+        frame_pid = ttk.LabelFrame(col_left, text='PID Matrix')
         frame_pid.grid(row=4, column=0, padx=6, pady=3, sticky="NSEW")
 
-        for j in range(4): 
+        for j in range(4):
             frame_pid.columnconfigure(j, weight=1)
-        # Column headers  
-        ttk.Label(frame_pid, text='Kp').grid(row=0, column=1, padx=2, pady=2)  
-        ttk.Label(frame_pid, text='Ki').grid(row=0, column=2, padx=2, pady=2)  
-        ttk.Label(frame_pid, text='Kd').grid(row=0, column=3, padx=2, pady=2)  
-        for i in range(3):  
-            row_entries = []  
-            ttk.Label(frame_pid, text='PID ' + str(i+1)).grid(row=i+1, column=0, padx=2, pady=2)  
-            for j in range(3):  
-                e = ttk.Entry(frame_pid, width=7)  
+        # Column headers
+        ttk.Label(frame_pid, text='Kp').grid(row=0, column=1, padx=2, pady=2)
+        ttk.Label(frame_pid, text='Ki').grid(row=0, column=2, padx=2, pady=2)
+        ttk.Label(frame_pid, text='Kd').grid(row=0, column=3, padx=2, pady=2)
+        for i in range(3):
+            row_entries = []
+            ttk.Label(frame_pid, text='PID ' + str(i+1)).grid(row=i+1, column=0, padx=2, pady=2)
+            for j in range(3):
+                e = ttk.Entry(frame_pid, width=7)
                 e.insert(0, init_pid_values[i][j])
                 e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  # .
-                row_entries.append(e)  
-            self.pid_entries.append(row_entries)  
+                row_entries.append(e)
+            self.pid_entries.append(row_entries)
 
         # Reset PID button
         reset_pid_button = ttk.Button(frame_pid, text="Reset all PIDs", command= lambda: self.reset_pid(4))
@@ -219,144 +219,144 @@ class gui_JAP:
         reset_pid_button3.grid(row=5, column=3, columnspan=1, pady=5, sticky="EW")
 
 
-        frame_antialiasing = ttk.LabelFrame(col_left, text='Anti-aliasing Filter')  
+        frame_antialiasing = ttk.LabelFrame(col_left, text='Anti-aliasing Filter')
         frame_antialiasing.grid(row=5, column=0, padx=6, pady=3, sticky="NSEW")
-        frame_antialiasing.columnconfigure(0, weight=0)  
+        frame_antialiasing.columnconfigure(0, weight=0)
         for j in range(1, 6):  # 5 colonne per i valori numerici
             frame_antialiasing.columnconfigure(j, weight=1)
 
-        # First stage 
-        ttk.Label(frame_antialiasing, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)  
+        # First stage
+        ttk.Label(frame_antialiasing, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)
         first_stage_entries = []
         first_stage_init_values = ["0.004824343357716229", "0.009648686539896796", "0.004824343384506867", "1.048599576362613", "-0.2961403575616704"]
         second_stage_init_entries = ["1.0", "2.000000036385403", "0.9999999944467821", "1.3209134308194246", "-0.632738792885275"]
-        for i in range(5):  
-            e = ttk.Entry(frame_antialiasing, width=4) 
-            e.insert(0, first_stage_init_values[i]) 
+        for i in range(5):
+            e = ttk.Entry(frame_antialiasing, width=4)
+            e.insert(0, first_stage_init_values[i])
             e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")
-            e.state(['readonly']) 
-            first_stage_entries.append(e)  
+            e.state(['readonly'])
+            first_stage_entries.append(e)
 
-        # Second stage  
-        ttk.Label(frame_antialiasing, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)  
-        second_stage_entries = []  
-        for i in range(5):  
-            e = ttk.Entry(frame_antialiasing, width=4)  
+        # Second stage
+        ttk.Label(frame_antialiasing, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)
+        second_stage_entries = []
+        for i in range(5):
+            e = ttk.Entry(frame_antialiasing, width=4)
             e.insert(0, second_stage_init_entries[i])
             e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")
-            e.state(['readonly']) 
-            second_stage_entries.append(e)  
+            e.state(['readonly'])
+            second_stage_entries.append(e)
 
-        # Filters (Fourth order)  
-        self.filtro_entries = [[], [], [], []]  
+        # Filters (Fourth order)
+        self.filtro_entries = [[], [], [], []]
         self.filtro_entries[0] = (first_stage_entries, second_stage_entries)
 
-        frame_filtri = ttk.LabelFrame(col_right, text='Fourth Order Filters')  
+        frame_filtri = ttk.LabelFrame(col_right, text='Fourth Order Filters')
         frame_filtri.grid(row=0, column=0, padx=5, pady=5, sticky="NSEW")
-        frame_filtri.columnconfigure(0, weight=1) 
+        frame_filtri.columnconfigure(0, weight=1)
         filters_type = ['Filter DOF1', 'Filter DOF2', 'Filter DOF3']
-        for filtro_idx, type in zip(range(1,4), filters_type):  
-            subframe = ttk.LabelFrame(frame_filtri, text=type)  
+        for filtro_idx, type in zip(range(1,4), filters_type):
+            subframe = ttk.LabelFrame(frame_filtri, text=type)
             subframe.grid(row=filtro_idx-1, column=0, padx=2, pady=2, sticky='NSEW')
-            subframe.columnconfigure(0, weight=0)  
+            subframe.columnconfigure(0, weight=0)
             for j in range(1, 6):  # 5 colonne per i valori numerici
                 subframe.columnconfigure(j, weight=1)
-            
-            # First stage 
-            ttk.Label(subframe, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)  
+
+            # First stage
+            ttk.Label(subframe, text='First Stage:').grid(row=0, column=0, sticky='w', padx=2)
             first_stage_entries = []
             first_stage_init_values = ["0.167179", "0.334359", "0.167179", "-0.328976", "-0.0645877"]
             second_stage_init_entries = ["1.0", "2.0", "1.0", "-0.45312", "-0.466326"]
-            for i in range(5):  
-                e = ttk.Entry(subframe, width=4) 
-                e.insert(0,first_stage_init_values[i]) 
+            for i in range(5):
+                e = ttk.Entry(subframe, width=4)
+                e.insert(0,first_stage_init_values[i])
                 e.grid(row=0, column=i+1, padx=1, pady=1, sticky="EW")  # .
-                e.state(['readonly']) 
-                first_stage_entries.append(e)  
-            # Second stage  
-            ttk.Label(subframe, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)  
-            second_stage_entries = []  
-            for i in range(5):  
-                e = ttk.Entry(subframe, width=4)  
+                e.state(['readonly'])
+                first_stage_entries.append(e)
+            # Second stage
+            ttk.Label(subframe, text='Second Stage:').grid(row=1, column=0, sticky='w', padx=2)
+            second_stage_entries = []
+            for i in range(5):
+                e = ttk.Entry(subframe, width=4)
                 e.insert(0,second_stage_init_entries[i])
                 e.grid(row=1, column=i+1, padx=1, pady=1, sticky="EW")  # .
-                e.state(['readonly']) 
-                second_stage_entries.append(e)  
-            self.filtro_entries[filtro_idx].append((first_stage_entries, second_stage_entries))  
+                e.state(['readonly'])
+                second_stage_entries.append(e)
+            self.filtro_entries[filtro_idx].append((first_stage_entries, second_stage_entries))
 
             if type.startswith('Filter DOF'):
                 dof_index = int(type[-1])
-                
+
                 # Crea un'istanza per questo DOF
                 dof_filter = DOF_Filter(dof_index, (first_stage_entries, second_stage_entries))
-                
+
                 # Frame for radio buttons and reset button
                 cb_frame = ttk.Frame(subframe)
                 cb_frame.grid(row=2, column=0, columnspan=6, sticky='w', pady=(5,0))
-                
+
                 # Radio buttons for selecting the mode for filter design
                 ttk.Radiobutton(
-                    cb_frame, text='Manual', variable=dof_filter.mode_var, 
-                    value='manual', 
+                    cb_frame, text='Manual', variable=dof_filter.mode_var,
+                    value='manual',
                     command=lambda df=dof_filter: df.update_mode(root=self.root)
                 ).grid(row=0, column=0, padx=5)
                 ttk.Radiobutton(
-                    cb_frame, text='Script', variable=dof_filter.mode_var, 
-                    value='script', 
+                    cb_frame, text='Script', variable=dof_filter.mode_var,
+                    value='script',
                     command=lambda df=dof_filter: df.update_mode(root=self.root)
                 ).grid(row=0, column=1, padx=5)
-                
+
                 # Reset button
                 reset_filter_button = ttk.Button(
-                    cb_frame, text=f"Reset Filter DOF{dof_filter.index}", 
+                    cb_frame, text=f"Reset Filter DOF{dof_filter.index}",
                     command=lambda df=dof_filter: self.call_reset_filter_for(df)
                 )
                 reset_filter_button.grid(row=0, column=2, padx=5, pady=5, sticky="W")
 
-        
-        # Switch sw2  
-        self.sw2_vars = [tk.IntVar(value=1) for _ in range(3)]  
-        frame_sw2 = ttk.LabelFrame(col_right, text='Switch sw2')  
+
+        # Switch sw2
+        self.sw2_vars = [tk.IntVar(value=1) for _ in range(3)]
+        frame_sw2 = ttk.LabelFrame(col_right, text='Switch sw2')
         frame_sw2.grid(row=1, column=0, padx=5, pady=5, sticky="NSEW")
         for j in range(4):  # Aumentato a 4 per il bottone di toggle
             frame_sw2.columnconfigure(j, weight=1)
 
         # Close loop 2 button
-        self.sw2_toggle_var = tk.IntVar(value=1)  
+        self.sw2_toggle_var = tk.IntVar(value=1)
         self.sw2_toggle_button = tk.Button(
-            frame_sw2, 
-            text="Close loop 2", 
+            frame_sw2,
+            text="Close loop 2",
             command=self.toggle_sw2_loop,
-            relief=tk.SUNKEN, 
-            bg='lightgreen'    
+            relief=tk.SUNKEN,
+            bg='lightgreen'
         )
         self.sw2_toggle_button.grid(row=0, column=0, padx=5, pady=5, sticky="W")
-        
-        # Checkbox sw2  
-        for i in range(self.DOF):
-            cb = ttk.Checkbutton(  
-                frame_sw2,   
-                text='sw2_' + str(i+1),   
-                variable=self.sw2_vars[i],  
-                command=lambda i=i: (self.sw2_vars[i].get(), self.send_system_data())
-            )    
-            cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW") 
 
-        # Offset x_os  
-        self.xos_entries = []  
+        # Checkbox sw2
+        for i in range(self.DOF):
+            cb = ttk.Checkbutton(
+                frame_sw2,
+                text='sw2_' + str(i+1),
+                variable=self.sw2_vars[i],
+                command=lambda i=i: (self.sw2_vars[i].get(), self.send_system_data())
+            )
+            cb.grid(row=0, column=i+1, padx=5, pady=5, sticky="EW")
+
+        # Offset x_os
+        self.xos_entries = []
         init_xos_values = ["0", "0", "0"]
-        frame_xos = ttk.LabelFrame(col_right, text='Offset x_os')  
+        frame_xos = ttk.LabelFrame(col_right, text='Offset x_os')
         frame_xos.grid(row=2, column=0, padx=5, pady=5, sticky="NSEW")
         for j in range(3):
             frame_xos.columnconfigure(j, weight=1)
-        for i in range(3):  
-            e = ttk.Entry(frame_xos, width=7)  
+        for i in range(3):
+            e = ttk.Entry(frame_xos, width=7)
             e.insert(0, init_xos_values[i])
-            e.grid(row=0, column=i, padx=2, pady=2, sticky="EW")  
-            self.xos_entries.append(e)  
-        
-        # Matrix D (pre-filled with 1)  
-        self.d_entries = []  
+            e.grid(row=0, column=i, padx=2, pady=2, sticky="EW")
+            self.xos_entries.append(e)
+
+        # Matrix D (pre-filled with 1)
+        self.d_entries = []
         '''init_values_D = [
             ["1", "0", "0", "0"],
             ["0", "1", "0", "0"],
@@ -368,7 +368,7 @@ class gui_JAP:
             ["0", "0", "1"],
             ["0", "0", "0"]
         ]
-        frame_d = ttk.LabelFrame(col_right, text='Matrix D')  
+        frame_d = ttk.LabelFrame(col_right, text='Matrix D')
         frame_d.grid(row=3, column=0, padx=5, pady=5, sticky="NSEW")
 
         # Add column labels
@@ -377,15 +377,15 @@ class gui_JAP:
             ttk.Label(frame_d, text=f'DOF {j+1}').grid(row=0, column=j+1, padx=2, pady=2, sticky="EW")
 
         # Add row labels and entries
-        for i in range(np.shape(init_values_D)[0]):  
-            row_entries = []  
+        for i in range(np.shape(init_values_D)[0]):
+            row_entries = []
             ttk.Label(frame_d, text=f'PWM {i+1}').grid(row=i+1, column=0, padx=2, pady=2, sticky="EW")
-            for j in range(np.shape(init_values_D)[1]):  
-                e = ttk.Entry(frame_d, width=5)  
-                e.insert(0, init_values_D[i][j])  
-                e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")  
-                row_entries.append(e)  
-            self.d_entries.append(row_entries)  
+            for j in range(np.shape(init_values_D)[1]):
+                e = ttk.Entry(frame_d, width=5)
+                e.insert(0, init_values_D[i][j])
+                e.grid(row=i+1, column=j+1, padx=2, pady=2, sticky="EW")
+                row_entries.append(e)
+            self.d_entries.append(row_entries)
 
         # Signal injection
         # Storage for signal parameters
@@ -393,11 +393,11 @@ class gui_JAP:
         self.signal_freq = list(repeat(1., DOF))
         self.signal_en = list(repeat(False, 4))
 
-        # Status box (white text)  
-        self.status_var = tk.StringVar()  
-        self.status_label = tk.Label(main_frame, textvariable=self.status_var, bg='black', fg='white', relief='sunken', anchor='w', width=50)  
-        self.status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")  
-        
+        # Status box (white text)
+        self.status_var = tk.StringVar()
+        self.status_label = tk.Label(main_frame, textvariable=self.status_var, bg='black', fg='white', relief='sunken', anchor='w', width=50)
+        self.status_label.grid(row=2, column=0, columnspan=2, pady=10, sticky="NSEW")
+
         # Frame per contenere entrambi i bottoni
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=1, column=0, columnspan=2, pady=15, sticky="W")
@@ -411,15 +411,15 @@ class gui_JAP:
 
         # IP Address field
         self.ip_addr_var = tk.StringVar(value="192.168.11.15")
-        frame_ip = ttk.LabelFrame(main_frame, text='Destination IP Address')
-        frame_ip.grid(row=1, column=1, padx=6, pady=3, sticky="NSEW")
+        frame_ip = ttk.LabelFrame(col_right, text='Destination IP Address')
+        frame_ip.grid(row=4, column=0, padx=6, pady=3, sticky="NSEW")
         frame_ip.columnconfigure(0, weight=1)
         frame_ip.columnconfigure(1, weight=1)
         frame_ip.columnconfigure(2, weight=0)
 
         ttk.Label(frame_ip, text="IP Address:").grid(row=0, column=0, padx=5, pady=5, sticky="W")
         ip_entry = ttk.Entry(frame_ip, textvariable=self.ip_addr_var, width=18)
-        ip_entry.grid(row=0, column=1, padx=5, pady=5, sticky="EW")  
+        ip_entry.grid(row=0, column=1, padx=5, pady=5, sticky="EW")
 
         send_ip_button = ttk.Button(frame_ip, text='Update IP', command=self.send_system_data)
         send_ip_button.grid(row=0, column=2, padx=5, pady=5, sticky="E")
@@ -427,17 +427,17 @@ class gui_JAP:
         self.root = self.root
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # Serial port detection at startup  
-        uart_port = find_uart_port()  
-        if uart_port:  
-            self.update_status('Serial port found: ' + uart_port, self.status_var, self.status_label)  
-        else:  
+        # Serial port detection at startup
+        uart_port = find_uart_port()
+        if uart_port:
+            self.update_status('Serial port found: ' + uart_port, self.status_var, self.status_label)
+        else:
             self.update_status('No serial port found!', self.status_var, self.status_label)
 
         self.stm32 = stm32payloadConn.STM32PayloadConn(uart_port)
 
         self.root.mainloop()
-    
+
     def lift_window(self):
         self.root.focus_force()                    # Focus the window
 
@@ -446,8 +446,8 @@ class gui_JAP:
             self.root.destroy()
 
     def build_config_frame_data(self):
-        ''' 
-        - Sensing Matrix: 4x3 = 12 floats concatenated rows 
+        '''
+        - Sensing Matrix: 4x3 = 12 floats concatenated rows
         - Switch1 sw1: 3 bytes
         - Setpoint x_sp: 3 floats
         - PID 3 Vectors 3fx3 = 9 floats
@@ -522,21 +522,21 @@ class gui_JAP:
         # print("Matrix D: ", D)
 
         cfg_frame = self.stm32.create_config_frame(
-            S=S, 
-            x_sp=x_sp, 
-            PID1_values=PID1_values, 
-            PID2_values=PID2_values, 
-            PID3_values=PID3_values, 
-            filter_values_flat1=filter_values_flat1, 
-            filter_values_flat2=filter_values_flat2, 
-            filter_values_flat3=filter_values_flat3, 
-            x_os=x_os, 
+            S=S,
+            x_sp=x_sp,
+            PID1_values=PID1_values,
+            PID2_values=PID2_values,
+            PID3_values=PID3_values,
+            filter_values_flat1=filter_values_flat1,
+            filter_values_flat2=filter_values_flat2,
+            filter_values_flat3=filter_values_flat3,
+            x_os=x_os,
             D=D
         )
         return cfg_frame
-    
+
     def build_system_frame_data(self, reset_bytes=None):
-        ''' 
+        '''
             - IP destination address: 4 byte
             - Switch1 sw1: 4 byte
             - Switch2 sw2: 4 byte
@@ -589,7 +589,7 @@ class gui_JAP:
                 reset_bytes = [np.uint8(0X04), np.uint8(0), np.uint8(0), np.uint8(0)]
             case 4:
                 reset_bytes = [np.uint8(0X07), np.uint8(0), np.uint8(0), np.uint8(0)]
-        
+
         frame_data = self.build_system_frame_data(reset_bytes)
         self.send_data(frame_data)
 
@@ -609,22 +609,22 @@ class gui_JAP:
                 self.update_status('Error: Frame data not generated.', self.status_var, self.status_label)
         else:
             self.update_status('No serial port found!', self.status_var, self.status_label)
-    
-    def update_status(self, msg, frame, frame_label):  
+
+    def update_status(self, msg, frame, frame_label):
         frame.set(msg)
         frame_label.update_idletasks()
-    
+
     # Closed loop toggles
     def toggle_sw1_loop(self):
         current_state = self.sw1_toggle_var.get()
         new_state = 0 if current_state else 1
         self.sw1_toggle_var.set(new_state)
-        
+
         # Set same values for sw1
         for i in range(self.DOF):
             self.sw1_vars[i].set(new_state)
-        
-        
+
+
         self.sw1_toggle_button.config(
             relief=tk.SUNKEN if new_state else tk.RAISED,
             bg='lightgreen' if new_state else 'lightgray'
@@ -636,12 +636,12 @@ class gui_JAP:
         current_state = self.sw2_toggle_var.get()
         new_state = 0 if current_state else 1
         self.sw2_toggle_var.set(new_state)
-        
-        
+
+
         for i in range(self.DOF):
             self.sw2_vars[i].set(new_state)
-        
-        
+
+
         self.sw2_toggle_button.config(
             relief=tk.SUNKEN if new_state else tk.RAISED,
             bg='lightgreen' if new_state else 'lightgray'
@@ -654,7 +654,7 @@ class gui_JAP:
 
         frame_data = self.build_system_frame_data(reset_bytes)
         self.send_data(frame_data)
-    
+
     def open_signal_window(self):
         win = tk.Toplevel(self.root)
         win.title("Sinusoidal Signal Config")
@@ -692,7 +692,7 @@ class gui_JAP:
 
         # Send Button
         ttk.Button(win, text="Send", command=lambda: self.send_sinusoidal_from_window(win)).grid(row=4, column=1, pady=10)
-    
+
 
     def send_sinusoidal_from_window(self, window):
         try:
@@ -706,18 +706,16 @@ class gui_JAP:
                 raise ValueError("Amplitude must be between -1.0 and 1.0")
             if not 0.1 <= freq <= 100.0:
                 raise ValueError("Frequency must be between 0.1 and 100.0 Hz")
- 
+
             # Set selected DOF
             self.signal_ampl[dof] = amp
             self.signal_freq[dof] = freq
             self.signal_en[dof] = enable
 
             # Send via STM32
-            #frame = self.stm32.create_sinusoidal_frame(amplitudes, frequencies, enables)
             frame = self.build_system_frame_data(reset_bytes=None)
-            #frame = self.stm32.create_sys_frame(dest_ip_addr, sw1, sw2, reset_bytes, self.signal_ampl, self.signal_freq, self.signal_en)
             self.send_data(frame)
-            
+
             window.destroy()
             self.update_status(f"Sent: DOF{dof+1} | Amp: {amp} | Freq: {freq}Hz | {'ON' if enable else 'OFF'}",
                             self.status_var, self.status_label)
@@ -740,7 +738,7 @@ class DOF_Filter(gui_JAP):
             'type': 'lowpass',
             'Q': ''
         }
-    
+
     def open_script_window(self, root):
         win = tk.Toplevel(root)
         win.title(f"Filter Design Parameters - DOF {self.index}")
@@ -781,7 +779,7 @@ class DOF_Filter(gui_JAP):
                 if ftype == 'notch' and Q is None:
                     self.update_status("Error: Q factor is required for notch filter.", self.status_var, self.status_label)
                     return
-            
+
                 # Salva i parametri
                 self.script_params = {
                     'fs': fs_var.get(),
@@ -805,14 +803,14 @@ class DOF_Filter(gui_JAP):
                 self.update_status(f"Error: Invalid parameters:\n{e}", self.status_var, self.status_label)
 
         ttk.Button(win, text="Compute", command=compute_and_fill).grid(row=5, column=0, columnspan=2, pady=10)
-    
+
     def update_mode(self, root):
         if self.mode_var.get() == 'manual':
             for e in self.entries[0] + self.entries[1]:
                 e.config(state='normal')
         elif self.mode_var.get() == 'script':
             self.open_script_window(root)
-    
+
     def reset_filter(self):
         match self.index:
             case 1:
@@ -821,7 +819,7 @@ class DOF_Filter(gui_JAP):
                 reset_bytes = [np.uint8(0), np.uint8(0X20), np.uint8(0), np.uint8(0)]
             case 3:
                 reset_bytes = [np.uint8(0), np.uint8(0X40), np.uint8(0), np.uint8(0)]
-        
+
         return reset_bytes
         #frame_data = self.build_system_frame_data(reset_bytes)
         #self.send_data(frame_data)
